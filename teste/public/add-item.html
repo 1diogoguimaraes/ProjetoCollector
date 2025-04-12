@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="stylesheet" href="/public/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="logo">MyApp</div>
+    <nav class="nav-menu">
+      <a href="#">Home</a>
+      <a href="/" id="searchTab">Search</a>
+      <a href="/add-item" id="addItemTab" class="active">Add Item</a>
+      <a href="#">Forum</a>
+    </nav>
+    <div>
+      <span id="usernameDisplay">Welcome, </span>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Add a New Item</h2>
+    <form id="addItemForm">
+      <input type="text" id="name" placeholder="Item Name" required>
+      <input type="text" id="description" placeholder="Description" required>
+      <input type="date" id="acquisition_date" placeholder="Acquisition Date">
+      <input type="number" id="cost" placeholder="Cost">
+      <input type="text" id="origin" placeholder="Origin">
+      <textarea id="documents" placeholder="Documents/Links"></textarea>
+      <input type="text" id="brand" placeholder="Brand">
+      <input type="text" id="model" placeholder="Model">
+      <input type="file" id="photos" name="photos" multiple accept="image/*">
+
+      <select id="type">
+        <option value="private">Private</option>
+        <option value="public">Public</option>
+      </select>
+      <button type="submit">Add Item</button>
+    </form>
+    <div id="formMessage" class="form-message" style="color: red; margin-top: 10px;"></div>
+
+  </div>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/logout', { method: 'POST' });
+      window.location.href = '/login';
+    });
+
+    async function loadUserInfo() {
+      const response = await fetch('/user');
+      const data = await response.json();
+      if (data.username) {
+        document.getElementById('usernameDisplay').innerText = `Welcome, ${data.username}`;
+      }
+    }
+
+    async function addItem(event) {
+      event.preventDefault();
+
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('description', document.getElementById('description').value.trim());
+
+      const rawDate = document.getElementById('acquisition_date').value;
+/*       const formattedDate = new Date(rawDate).toISOString().split('T')[0];
+      formData.append('acquisition_date', formattedDate); */
+
+
+      formData.append('cost', document.getElementById('cost').value);
+      formData.append('origin', document.getElementById('origin').value.trim());
+      formData.append('documents', document.getElementById('documents').value.trim());
+      formData.append('brand', document.getElementById('brand').value.trim());
+      formData.append('model', document.getElementById('model').value.trim());
+      formData.append('type', document.getElementById('type').value);
+
+      const photos = document.getElementById('photos').files;
+      for (let i = 0; i < photos.length; i++) {
+        formData.append('photos', photos[i]);
+      }
+
+      const response = await fetch('/items', {
+        method: 'POST',
+        body: formData
+      });
+
+      const messageDiv = document.getElementById('formMessage');
+      if (response.ok) {
+        messageDiv.textContent = '✅ Item added successfully!';
+        messageDiv.style.color = 'green';
+        document.getElementById('addItemForm').reset();
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        messageDiv.textContent = '❌ Failed to add item.';
+        messageDiv.style.color = 'red';
+      }
+    }
+
+
+
+
+    document.getElementById('addItemForm').addEventListener('submit', addItem);
+    loadUserInfo();
+  </script>
+</body>
+
+</html>

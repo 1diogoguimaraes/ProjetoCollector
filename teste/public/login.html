@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link rel="stylesheet" href="/public/style.css"/>
+</head>
+<body>
+
+  <!-- Top Banner -->
+
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <div class="logo">MyApp</div>
+    <nav class="nav-menu">
+      <a href="#">Home</a>
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="/login">Login</a>
+    </nav>
+    <nav class="nav-menu">
+      <a href="/login" class="btn-cta">Login</a>
+    </nav>
+      
+
+   
+  </header>
+
+  <!-- Login Form -->
+  <div class="login-form">
+    <h1>Login</h1>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <p>Don't have an account? <a href="/register">Register here</a></p>
+  </div>
+
+  <script>
+    async function login(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        window.location.href = '/';
+      } else {
+        alert('Login failed');
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', login);
+  </script>
+
+</body>
+</html>

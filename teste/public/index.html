@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="stylesheet" href="/public/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- Top Banner -->
+
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <div class="logo">MyApp</div>
+    <nav class="nav-menu">
+      <a href="#">Home</a>
+      <a href="/" id="searchTab" class="active">Search</a>
+      <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+      <a href="#">Forum</a>
+
+    </nav>
+    <div>
+      <span id="usernameDisplay"></span>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+  </header>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- User Info 
+    <header>
+      <div class="user-info">
+        <span id="usernameDisplay">Welcome, </span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </header>
+    -->
+
+    <!-- Top Menu -->
+    <!--     
+    <nav class="menu">
+      <button id="searchTab" class="active">🔍 Search</button>
+      <button id="addItemTab">➕ Add Item</button>
+    </nav> -->
+
+
+
+    <!-- Search Section -->
+    <div id="searchSection" class="section active">
+      <input type="text" id="search" placeholder="Search Collection">
+      <table id="itemTable" border="1" cellpadding="8" cellspacing="0">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Acquisition Date</th>
+            <th>Cost</th>
+            <th>Origin</th>
+            <th>Documents</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Photos</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="itemList"></tbody>
+      </table>
+    </div>
+
+    <!-- Add Item Section -->
+    <div id="addItemSection" class="section">
+      <form id="addItemForm">
+        <input type="text" id="name" placeholder="Item Name" required>
+        <input type="text" id="description" placeholder="Description" required>
+        <input type="date" id="acquisition_date" placeholder="Acquisition Date">
+        <input type="number" id="cost" placeholder="Cost">
+        <input type="text" id="origin" placeholder="Origin">
+        <textarea id="documents" placeholder="Documents/Links"></textarea>
+        <input type="text" id="brand" placeholder="Brand">
+        <input type="text" id="model" placeholder="Model">
+        <input type="text" id="photos" placeholder="Photos/Links">
+        <select id="type">
+          <option value="private">Private</option>
+          <option value="public">Public</option>
+        </select>
+        <button type="submit">Add Item</button>
+      </form>
+    </div>
+
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <p>Are you sure you want to delete this item?</p>
+        <div class="modal-buttons">
+          <button id="confirmDeleteBtn" class="btn-confirm">Yes, delete</button>
+          <button id="cancelDeleteBtn" class="btn-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Item Modal -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h3>Edit Item</h3>
+        <form id="editItemForm">
+          <input type="hidden" id="edit-id">
+          <input type="text" id="edit-name" placeholder="Item Name" required>
+          <input type="text" id="edit-description" placeholder="Description" required>
+          <input type="date" id="edit-acquisition_date" placeholder="Acquisition Date">
+          <input type="number" id="edit-cost" placeholder="Cost">
+          <input type="text" id="edit-origin" placeholder="Origin">
+          <textarea id="edit-documents" placeholder="Documents/Links"></textarea>
+          <input type="text" id="edit-brand" placeholder="Brand">
+          <input type="text" id="edit-model" placeholder="Model">
+
+          <!-- Preview thumbnails -->
+          <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
+          <!-- Input for editing photo URLs -->
+          <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
+
+
+
+          <select id="edit-type">
+            <option value="private">Private</option>
+            <option value="public">Public</option>
+          </select>
+          <div class="modal-buttons">
+            <button type="submit" class="btn-confirm">Update</button>
+            <button type="button" id="cancelEditBtn" class="btn-cancel">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="imageModal" class="modal"
+      style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); justify-content:center; align-items:center;">
+
+      <span id="closeModal"
+        style="position:absolute; top:20px; right:30px; color:#fff; font-size:30px; cursor:pointer;">&times;</span>
+
+      <span id="prevImage"
+        style="position:absolute; left:30px; color:#fff; font-size:40px; cursor:pointer;">&#10094;</span>
+      <img id="modalImage" style="max-width:90%; max-height:90%; border-radius:8px;" />
+      <span id="nextImage"
+        style="position:absolute; right:30px; color:#fff; font-size:40px; cursor:pointer;">&#10095;</span>
+    </div>
+
+
+
+    <!-- Script -->
+    <script>
+      // Logout
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await fetch('/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
+
+      // Tab Switching
+
+      const searchTab = document.getElementById('searchTab');
+      /* const addItemTab = document.getElementById('addItemTab'); */
+
+      const searchSection = document.getElementById('searchSection');
+      /* const addItemSection = document.getElementById('addItemSection'); */
+
+      function switchTab(tab) {
+        if (tab === 'search') {
+          searchSection.classList.add('active');
+          addItemSection.classList.remove('active');
+          searchTab.classList.add('active');
+          addItemTab.classList.remove('active');
+        } else {
+          searchSection.classList.remove('active');
+          addItemSection.classList.add('active');
+          searchTab.classList.remove('active');
+          addItemTab.classList.add('active');
+        }
+      }
+
+      searchTab.addEventListener('click', () => switchTab('search'));
+      addItemTab.addEventListener('click', () => switchTab('add'));
+
+      // Fetch Items
+      async function fetchItems() {
+        const searchQuery = document.getElementById('search').value;
+        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}`);
+        const items = await response.json();
+        const itemList = document.getElementById('itemList');
+        itemList.innerHTML = '';
+
+        items.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.description}</td>
+          <td>${item.acquisition_date || 'N/A'}</td>
+          <td>${item.cost || 'N/A'}</td>
+          <td>${item.origin || 'N/A'}</td>
+          <td>${item.documents || 'N/A'}</td>
+          <td>${item.brand || 'N/A'}</td>
+          <td>${item.model || 'N/A'}</td>
+          <td>${item.photos
+              ? (() => {
+                const urls = item.photos.split(',').map(u => u.trim());
+                return urls
+                  .map(
+                    (url, index) =>
+                      `<img src="${url}" alt="photo" style="width:50px;height:auto;margin-right:4px; cursor:pointer;" onclick="openImageModal('${urls.join('|')}', ${index})">`
+                  )
+                  .join('');
+              })()
+              : 'No images'
+            }</td>
+
+
+
+
+          <td>${item.type || 'private'}</td>
+          <td>
+            <button onclick="deleteItem(${item.id})">❌</button>
+            <button onclick="editItem(${item.id})">✏️</button>
+          </td>
+        `;
+          itemList.appendChild(row);
+        });
+      }
+
+      let currentImageIndex = 0;
+      let currentImageList = [];
+
+      function openImageModal(clickedUrl) {
+        currentImageList = clickedUrl.split('|'); // we’ll send images joined with "|" from HTML
+        currentImageIndex = 0;
+
+        showImage(currentImageIndex);
+        document.getElementById('imageModal').style.display = 'flex';
+      }
+
+      function showImage(index) {
+        const modalImg = document.getElementById('modalImage');
+        modalImg.src = currentImageList[index];
+      }
+
+      document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('imageModal').style.display = 'none';
+      });
+
+      document.getElementById('prevImage').addEventListener('click', () => {
+        if (currentImageIndex > 0) {
+          currentImageIndex--;
+          showImage(currentImageIndex);
+        }
+      });
+
+      document.getElementById('nextImage').addEventListener('click', () => {
+        if (currentImageIndex < currentImageList.length - 1) {
+          currentImageIndex++;
+          showImage(currentImageIndex);
+        }
+      });
+
+      document.getElementById('imageModal').addEventListener('click', (e) => {
+        if (e.target.id === 'imageModal') {
+          document.getElementById('imageModal').style.display = 'none';
+        }
+      });
+
+
+
+
+      async function addItem(event) {
+        event.preventDefault();
+        const item = {
+          name: document.getElementById('name').value,
+          description: document.getElementById('description').value,
+          acquisition_date: document.getElementById('acquisition_date').value,
+          cost: document.getElementById('cost').value,
+          origin: document.getElementById('origin').value,
+          documents: document.getElementById('documents').value,
+          brand: document.getElementById('brand').value,
+          model: document.getElementById('model').value,
+          photos: document.getElementById('photos').value,
+          type: document.getElementById('type').value
+        };
+
+        await fetch('/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+
+        document.getElementById('addItemForm').reset();
+        switchTab('search');
+        fetchItems();
+      }
+
+      let itemIdToDelete = null;
+
+      function deleteItem(id) {
+        itemIdToDelete = id;
+        document.getElementById('deleteModal').style.display = 'flex';
+      }
+
+      document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (itemIdToDelete !== null) {
+          await fetch(`/items/${itemIdToDelete}`, { method: 'DELETE' });
+          fetchItems();
+          itemIdToDelete = null;
+        }
+        document.getElementById('deleteModal').style.display = 'none';
+      });
+
+      document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        itemIdToDelete = null;
+        document.getElementById('deleteModal').style.display = 'none';
+      });
+
+      // Open the Edit Modal with item data
+      function createImageThumbnail(url, container) {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.width = '60px';
+        img.style.height = 'auto';
+        img.style.borderRadius = '4px';
+        img.style.border = '1px solid #ccc';
+
+        const removeBtn = document.createElement('span');
+        removeBtn.innerHTML = '&times;';
+        removeBtn.style.position = 'absolute';
+        removeBtn.style.top = '-8px';
+        removeBtn.style.right = '-8px';
+        removeBtn.style.background = '#f00';
+        removeBtn.style.color = '#fff';
+        removeBtn.style.padding = '0 5px';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.fontSize = '14px';
+
+        removeBtn.onclick = () => {
+          container.removeChild(wrapper);
+        };
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+      }
+
+      async function editItem(id) {
+        const response = await fetch(`/items/${id}`);
+        const item = await response.json();
+
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-name').value = item.name;
+        document.getElementById('edit-description').value = item.description;
+        document.getElementById('edit-acquisition_date').value = item.acquisition_date || '';
+        document.getElementById('edit-cost').value = item.cost || '';
+        document.getElementById('edit-origin').value = item.origin || '';
+        document.getElementById('edit-documents').value = item.documents || '';
+        document.getElementById('edit-brand').value = item.brand || '';
+        document.getElementById('edit-model').value = item.model || '';
+        document.getElementById('edit-photos').value = '';
+        document.getElementById('edit-type').value = item.type || 'private';
+
+        const previewContainer = document.getElementById('edit-photo-preview');
+        previewContainer.innerHTML = '';
+
+        if (item.photos) {
+          item.photos.split(',').forEach(url => {
+            if (url.trim()) {
+              createImageThumbnail(url.trim(), previewContainer);
+            }
+          });
+        }
+
+        document.getElementById('editModal').style.display = 'flex';
+      }
+
+
+      // Submit edited data
+      document.getElementById('editItemForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('edit-id').value;
+
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-name').value);
+        formData.append('description', document.getElementById('edit-description').value);
+        formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
+        formData.append('cost', document.getElementById('edit-cost').value);
+        formData.append('origin', document.getElementById('edit-origin').value);
+        formData.append('documents', document.getElementById('edit-documents').value);
+        formData.append('brand', document.getElementById('edit-brand').value);
+        formData.append('model', document.getElementById('edit-model').value);
+        formData.append('type', document.getElementById('edit-type').value);
+
+        // Existing thumbnails (in case you want to keep them in backend)
+        const existingThumbnails = Array.from(document.getElementById('edit-photo-preview').getElementsByTagName('img'));
+        const existingUrls = existingThumbnails.map(img => img.src);
+        formData.append('existingPhotos', JSON.stringify(existingUrls));
+
+        // New uploaded photos
+        const newPhotos = document.getElementById('edit-photos').files;
+        for (let i = 0; i < newPhotos.length; i++) {
+          formData.append('photos', newPhotos[i]);
+        }
+
+        await fetch(`/items/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
+
+        document.getElementById('editModal').style.display = 'none';
+        fetchItems();
+      });
+      document.getElementById('edit-photos').addEventListener('change', function () {
+  const previewContainer = document.getElementById('edit-photos-preview');
+  previewContainer.innerHTML = '';
+
+  Array.from(this.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.width = '60px';
+      img.style.borderRadius = '4px';
+      img.style.border = '1px solid #ccc';
+      previewContainer.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+
+
+      // Cancel edit
+      document.getElementById('cancelEditBtn').addEventListener('click', () => {
+        document.getElementById('editModal').style.display = 'none';
+      });
+
+
+
+      async function loadUserInfo() {
+        const response = await fetch('/user');
+        const data = await response.json();
+        if (data.username) {
+          document.getElementById('usernameDisplay').innerText = `Welcome, ${data.username}`;
+        }
+      }
+
+      document.getElementById('addItemForm').addEventListener('submit', addItem);
+      document.getElementById('search').addEventListener('input', fetchItems);
+
+      // Initialize
+      loadUserInfo();
+      fetchItems();
+    </script>
+
+</body>
+
+</html>
