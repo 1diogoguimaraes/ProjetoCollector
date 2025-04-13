@@ -32,7 +32,9 @@
       <input type="date" id="acquisition_date" placeholder="Acquisition Date">
       <input type="number" id="cost" placeholder="Cost">
       <input type="text" id="origin" placeholder="Origin">
-      <textarea id="documents" placeholder="Documents/Links"></textarea>
+      <input type="file" id="documents" name="documents" multiple
+        accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+
       <input type="text" id="brand" placeholder="Brand">
       <input type="text" id="model" placeholder="Model">
       <input type="file" id="photos" name="photos" multiple accept="image/*">
@@ -69,13 +71,12 @@
       formData.append('description', document.getElementById('description').value.trim());
 
       const rawDate = document.getElementById('acquisition_date').value;
-/*       const formattedDate = new Date(rawDate).toISOString().split('T')[0];
-      formData.append('acquisition_date', formattedDate); */
+      /*       const formattedDate = new Date(rawDate).toISOString().split('T')[0];
+            formData.append('acquisition_date', formattedDate); */
 
 
       formData.append('cost', document.getElementById('cost').value);
       formData.append('origin', document.getElementById('origin').value.trim());
-      formData.append('documents', document.getElementById('documents').value.trim());
       formData.append('brand', document.getElementById('brand').value.trim());
       formData.append('model', document.getElementById('model').value.trim());
       formData.append('type', document.getElementById('type').value);
@@ -84,6 +85,11 @@
       for (let i = 0; i < photos.length; i++) {
         formData.append('photos', photos[i]);
       }
+      const documents = document.getElementById('documents').files;
+      for (let i = 0; i < documents.length; i++) {
+        formData.append('documents', documents[i]);
+      }
+
 
       const response = await fetch('/items', {
         method: 'POST',

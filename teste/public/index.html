@@ -213,7 +213,25 @@
           <td>${item.acquisition_date || 'N/A'}</td>
           <td>${item.cost || 'N/A'}</td>
           <td>${item.origin || 'N/A'}</td>
-          <td>${item.documents || 'N/A'}</td>
+          <td>
+  ${
+    item.documents
+      ? item.documents
+          .split(',')
+          .map((doc, index) => {
+            const trimmed = doc.trim();
+            const fileName = trimmed.split('/').pop(); // get file name from URL
+            return `
+              <div style="display:flex; align-items:center; gap:6px;">
+                <a href="${trimmed}" download="${fileName}" target="_blank">${fileName}</a>
+                              </div>
+            `;
+          })
+          .join('')
+      : 'No documents'
+  }
+</td>
+
           <td>${item.brand || 'N/A'}</td>
           <td>${item.model || 'N/A'}</td>
           <td>${item.photos
@@ -310,6 +328,9 @@
         switchTab('search');
         fetchItems();
       }
+
+
+
 
       let itemIdToDelete = null;
 

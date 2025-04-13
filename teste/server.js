@@ -178,27 +178,32 @@ function isLoggedIn(req, res, next) {
 app.use('/items', isLoggedIn);
 
 // Create item
-app.post('/items', isLoggedIn, upload.array('photos', 10), (req, res) => {
-    const { name, description, acquisition_date, cost, origin, documents, brand, model, type } = req.body;
+app.post('/items', isLoggedIn, upload.fields([
+    { name: 'photos', maxCount: 10 },
+    { name: 'documents', maxCount: 10 }
+  ]), (req, res) => {
+    const { name, description, acquisition_date, cost, origin, brand, model, type } = req.body;
     const userId = req.session.userId;
-
-    const photoPaths = req.files.map(file => `/public/uploads/${file.filename}`).join(',');
-
+  
+    const photos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`).join(',');
+    const documents = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`).join(',');
+  
     const query = `
       INSERT INTO items 
       (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photoPaths, type, userId];
-
+    const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, userId];
+  
     db.query(query, values, (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error inserting item');
-        }
-        res.status(200).send('Item added successfully');
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Error inserting item');
+      }
+      res.status(200).send('Item added successfully');
     });
-});
+  });
+  
 
 
 
