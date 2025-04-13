@@ -206,19 +206,22 @@ app.post('/items', isLoggedIn, upload.array('photos', 10), (req, res) => {
 // Fetch items for the logged-in user
 app.get('/items', isLoggedIn, (req, res) => {
     const searchQuery = req.query.search || '';
-
-    // Query to get items that belong to the logged-in user
-    const query = 'SELECT * FROM items WHERE user_id = ? AND (name LIKE ? OR description LIKE ?)';
-    const values = [req.session.userId, `%${searchQuery}%`,`%${searchQuery}%`];
-
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin']; // whitelist
+  
+    const field = allowedFields.includes(req.query.field) ? req.query.field : 'name'; // fallback to name
+  
+    const query = `SELECT * FROM items WHERE user_id = ? AND ${field} LIKE ?`;
+    const values = [req.session.userId, `%${searchQuery}%`];
+  
     db.query(query, values, (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error fetching items');
-        }
-        res.json(results);
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Error fetching items');
+      }
+      res.json(results);
     });
-});
+  });
+  
 
 
 

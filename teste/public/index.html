@@ -53,6 +53,13 @@
 
     <!-- Search Section -->
     <div id="searchSection" class="section active">
+      <select id="searchField">
+        <option value="name">Name</option>
+        <option value="description">Description</option>
+        <option value="brand">Brand</option>
+        <option value="model">Model</option>
+        <option value="origin">Origin</option>
+      </select>
       <input type="text" id="search" placeholder="Search Collection">
       <table id="itemTable" border="1" cellpadding="8" cellspacing="0">
         <thead>
@@ -190,7 +197,10 @@
       // Fetch Items
       async function fetchItems() {
         const searchQuery = document.getElementById('search').value;
-        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}`);
+        const searchField = document.getElementById('searchField').value;
+
+        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}`);
+
         const items = await response.json();
         const itemList = document.getElementById('itemList');
         itemList.innerHTML = '';
@@ -423,22 +433,22 @@
         fetchItems();
       });
       document.getElementById('edit-photos').addEventListener('change', function () {
-  const previewContainer = document.getElementById('edit-photos-preview');
-  previewContainer.innerHTML = '';
+        const previewContainer = document.getElementById('edit-photos-preview');
+        previewContainer.innerHTML = '';
 
-  Array.from(this.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.width = '60px';
-      img.style.borderRadius = '4px';
-      img.style.border = '1px solid #ccc';
-      previewContainer.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  });
-});
+        Array.from(this.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '60px';
+            img.style.borderRadius = '4px';
+            img.style.border = '1px solid #ccc';
+            previewContainer.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
 
 
 
@@ -459,6 +469,7 @@
 
       document.getElementById('addItemForm').addEventListener('submit', addItem);
       document.getElementById('search').addEventListener('input', fetchItems);
+      document.getElementById('searchField').addEventListener('change', fetchItems);
 
       // Initialize
       loadUserInfo();
