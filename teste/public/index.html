@@ -124,16 +124,18 @@
           <input type="date" id="edit-acquisition_date" placeholder="Acquisition Date">
           <input type="number" id="edit-cost" placeholder="Cost">
           <input type="text" id="edit-origin" placeholder="Origin">
-          <textarea id="edit-documents" placeholder="Documents/Links"></textarea>
+
+          <!-- Updated document input with preview -->
+          <div id="edit-documents-preview" style="margin-bottom: 10px;"></div>
+          <input type="file" id="edit-documents" name="documents" multiple
+            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+
           <input type="text" id="edit-brand" placeholder="Brand">
           <input type="text" id="edit-model" placeholder="Model">
 
-          <!-- Preview thumbnails -->
+          <!-- Photo preview -->
           <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
-          <!-- Input for editing photo URLs -->
           <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
-
-
 
           <select id="edit-type">
             <option value="private">Private</option>
@@ -214,22 +216,21 @@
           <td>${item.cost || 'N/A'}</td>
           <td>${item.origin || 'N/A'}</td>
           <td>
-  ${
-    item.documents
-      ? item.documents
-          .split(',')
-          .map((doc, index) => {
-            const trimmed = doc.trim();
-            const fileName = trimmed.split('/').pop(); // get file name from URL
-            return `
+  ${item.documents
+              ? item.documents
+                .split(',')
+                .map((doc, index) => {
+                  const trimmed = doc.trim();
+                  const fileName = trimmed.split('/').pop(); // get file name from URL
+                  return `
               <div style="display:flex; align-items:center; gap:6px;">
                 <a href="${trimmed}" download="${fileName}" target="_blank">${fileName}</a>
                               </div>
             `;
-          })
-          .join('')
-      : 'No documents'
-  }
+                })
+                .join('')
+              : 'No documents'
+            }
 </td>
 
           <td>${item.brand || 'N/A'}</td>
@@ -396,20 +397,47 @@
         document.getElementById('edit-acquisition_date').value = item.acquisition_date || '';
         document.getElementById('edit-cost').value = item.cost || '';
         document.getElementById('edit-origin').value = item.origin || '';
-        document.getElementById('edit-documents').value = item.documents || '';
         document.getElementById('edit-brand').value = item.brand || '';
         document.getElementById('edit-model').value = item.model || '';
-        document.getElementById('edit-photos').value = '';
         document.getElementById('edit-type').value = item.type || 'private';
 
-        const previewContainer = document.getElementById('edit-photo-preview');
-        previewContainer.innerHTML = '';
-
+        // Handle photos
+        const photoPreview = document.getElementById('edit-photo-preview');
+        photoPreview.innerHTML = '';
         if (item.photos) {
           item.photos.split(',').forEach(url => {
-            if (url.trim()) {
-              createImageThumbnail(url.trim(), previewContainer);
-            }
+            if (url.trim()) createImageThumbnail(url.trim(), photoPreview);
+          });
+        }
+
+        // Handle documents
+        const docPreview = document.getElementById('edit-documents-preview');
+        docPreview.innerHTML = '';
+        if (item.documents) {
+          item.documents.split(',').forEach(url => {
+            const trimmed = url.trim();
+            const fileName = trimmed.split('/').pop();
+
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '5px';
+
+            const link = document.createElement('a');
+            link.href = trimmed;
+            link.textContent = fileName;
+            link.target = '_blank';
+
+            const removeBtn = document.createElement('span');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.style.marginLeft = '10px';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.style.color = 'red';
+            removeBtn.onclick = () => {
+              docPreview.removeChild(wrapper);
+            };
+
+            wrapper.appendChild(link);
+            wrapper.appendChild(removeBtn);
+            docPreview.appendChild(wrapper);
           });
         }
 
@@ -419,40 +447,47 @@
 
       // Submit edited data
       document.getElementById('editItemForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        const id = document.getElementById('edit-id').value;
+    const id = document.getElementById('edit-id').value;
+    const formData = new FormData();
+    formData.append('name', document.getElementById('edit-name').value);
+    formData.append('description', document.getElementById('edit-description').value);
+    formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
+    formData.append('cost', document.getElementById('edit-cost').value);
+    formData.append('origin', document.getElementById('edit-origin').value);
+    formData.append('brand', document.getElementById('edit-brand').value);
+    formData.append('model', document.getElementById('edit-model').value);
+    formData.append('type', document.getElementById('edit-type').value);
 
-        const formData = new FormData();
-        formData.append('name', document.getElementById('edit-name').value);
-        formData.append('description', document.getElementById('edit-description').value);
-        formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
-        formData.append('cost', document.getElementById('edit-cost').value);
-        formData.append('origin', document.getElementById('edit-origin').value);
-        formData.append('documents', document.getElementById('edit-documents').value);
-        formData.append('brand', document.getElementById('edit-brand').value);
-        formData.append('model', document.getElementById('edit-model').value);
-        formData.append('type', document.getElementById('edit-type').value);
+    const photoPreview = document.getElementById('edit-photo-preview');
+    const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
+    const existingPhotos = photoThumbs.map(img => img.src);
+    formData.append('existingPhotos', JSON.stringify(existingPhotos));
 
-        // Existing thumbnails (in case you want to keep them in backend)
-        const existingThumbnails = Array.from(document.getElementById('edit-photo-preview').getElementsByTagName('img'));
-        const existingUrls = existingThumbnails.map(img => img.src);
-        formData.append('existingPhotos', JSON.stringify(existingUrls));
+    const newPhotos = document.getElementById('edit-photos').files;
+    for (let i = 0; i < newPhotos.length; i++) {
+      formData.append('photos', newPhotos[i]);
+    }
 
-        // New uploaded photos
-        const newPhotos = document.getElementById('edit-photos').files;
-        for (let i = 0; i < newPhotos.length; i++) {
-          formData.append('photos', newPhotos[i]);
-        }
+    const docPreview = document.getElementById('edit-documents-preview');
+    const docLinks = Array.from(docPreview.getElementsByTagName('a'));
+    const existingDocs = docLinks.map(link => link.href);
+    formData.append('existingDocuments', JSON.stringify(existingDocs));
 
-        await fetch(`/items/${id}`, {
-          method: 'PUT',
-          body: formData
-        });
+    const newDocs = document.getElementById('edit-documents').files;
+    for (let i = 0; i < newDocs.length; i++) {
+      formData.append('documents', newDocs[i]);
+    }
 
-        document.getElementById('editModal').style.display = 'none';
-        fetchItems();
-      });
+    await fetch(`/items/${id}`, {
+      method: 'PUT',
+      body: formData
+    });
+
+    document.getElementById('editModal').style.display = 'none';
+    fetchItems();
+  });
       document.getElementById('edit-photos').addEventListener('change', function () {
         const previewContainer = document.getElementById('edit-photos-preview');
         previewContainer.innerHTML = '';

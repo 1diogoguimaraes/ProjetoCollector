@@ -263,18 +263,21 @@ app.get('/items/:id', isLoggedIn, (req, res) => {
 
   // Update an item
   // Update an item
-app.put('/items/:id', isLoggedIn, upload.array('photos', 10), (req, res) => {
+  app.put('/items/:id', isLoggedIn, upload.fields([
+    { name: 'photos', maxCount: 10 },
+    { name: 'documents', maxCount: 10 }
+  ]), (req, res) => {
     const itemId = req.params.id;
     const updatedItem = req.body;
-
-    // Handle the existing photos
+  
     const existingPhotos = req.body.existingPhotos ? JSON.parse(req.body.existingPhotos) : [];
-    const newPhotos = req.files.map(file => `/public/uploads/${file.filename}`);
-
-    // Combine existing and new photos
+    const newPhotos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`);
     const allPhotos = [...existingPhotos, ...newPhotos];
-
-    // Update the item in the database
+  
+    const existingDocuments = req.body.existingDocuments ? JSON.parse(req.body.existingDocuments) : [];
+    const newDocuments = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`);
+    const allDocuments = [...existingDocuments, ...newDocuments];
+  
     const query = `
       UPDATE items 
       SET 
@@ -291,29 +294,30 @@ app.put('/items/:id', isLoggedIn, upload.array('photos', 10), (req, res) => {
       WHERE id = ? AND user_id = ?
     `;
     const values = [
-        updatedItem.name,
-        updatedItem.description,
-        updatedItem.acquisition_date,
-        updatedItem.cost,
-        updatedItem.origin,
-        updatedItem.documents,
-        updatedItem.brand,
-        updatedItem.model,
-        allPhotos.join(','),  // Join the photos as comma-separated values
-        updatedItem.type,
-        itemId,
-        req.session.userId // Ensure the item belongs to the logged-in user
+      updatedItem.name,
+      updatedItem.description,
+      updatedItem.acquisition_date,
+      updatedItem.cost,
+      updatedItem.origin,
+      allDocuments.join(','),
+      updatedItem.brand,
+      updatedItem.model,
+      allPhotos.join(','),
+      updatedItem.type,
+      itemId,
+      req.session.userId
     ];
-
+  
     db.query(query, values, (err, result) => {
-        if (err) {
-            console.error('Error updating item:', err);
-            return res.status(500).send('Error updating item');
-        }
-
-        res.json({ message: 'Item updated successfully', item: updatedItem });
+      if (err) {
+        console.error('Error updating item:', err);
+        return res.status(500).send('Error updating item');
+      }
+  
+      res.json({ message: 'Item updated successfully', item: updatedItem });
     });
-});
+  });
+  
 
 
   
