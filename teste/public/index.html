@@ -10,7 +10,15 @@
 </head>
 
 <body>
-
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <p>Are you sure you want to logout?</p>
+      <div class="modal-buttons">
+        <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
+        <button id="cancelLogout" class="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
   <!-- Top Banner -->
 
 
@@ -24,10 +32,16 @@
       <a href="#">Forum</a>
 
     </nav>
-    <div>
+    <div class="user-profile">
       <span id="usernameDisplay"></span>
-      <button id="logoutBtn">Logout</button>
-    </div>
+      <div class="profile-dropdown">
+        <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <div class="dropdown-menu" id="profileDropdown">
+          <a href="#">Profile</a><!-- /profile -->
+          <a href="#">Settings</a><!-- /settings -->
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
 
   </header>
 
@@ -166,10 +180,49 @@
     <!-- Script -->
     <script>
       // Logout
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await fetch('/logout', { method: 'POST' });
-        window.location.href = '/login';
+      const profileImg = document.getElementById('profileImg');
+      const profileDropdown = document.getElementById('profileDropdown');
+
+      profileImg.addEventListener('click', () => {
+        profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
       });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (event) => {
+        if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
+          profileDropdown.style.display = 'none';
+        }
+      });
+
+      // Hook logout from dropdown
+      document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
+  e.preventDefault(); // Prevent default action of the link
+  
+  // Show the custom modal
+  const logoutModal = document.getElementById('logoutModal');
+  logoutModal.style.display = 'flex';
+});
+
+// Handle confirm logout
+document.getElementById('confirmLogout').addEventListener('click', async () => {
+  await fetch('/logout', { method: 'POST' });
+  window.location.href = '/login';
+});
+
+// Handle cancel logout
+document.getElementById('cancelLogout').addEventListener('click', () => {
+  const logoutModal = document.getElementById('logoutModal');
+  logoutModal.style.display = 'none'; // Close the modal
+});
+
+// Close the modal if the user clicks outside of it
+window.addEventListener('click', (event) => {
+  const logoutModal = document.getElementById('logoutModal');
+  if (event.target === logoutModal) {
+    logoutModal.style.display = 'none'; // Close the modal if clicked outside
+  }
+});
+
 
       // Tab Switching
 
@@ -222,9 +275,11 @@
                 .map((doc, index) => {
                   const trimmed = doc.trim();
                   const fileName = trimmed.split('/').pop(); // get file name from URL
+                  const fileNameSimple = trimmed.split('#').pop();
+                  const fileDateAdded = fileName.split('#').shift();
                   return `
               <div style="display:flex; align-items:center; gap:6px;">
-                <a href="${trimmed}" download="${fileName}" target="_blank">${fileName}</a>
+                <p style="font-size:12px; color:lightgrey">${fileDateAdded}</p><a href="${trimmed}" download="${fileName}" target="_blank">${fileNameSimple}</a>
                               </div>
             `;
                 })
@@ -395,10 +450,12 @@
         document.getElementById('edit-name').value = item.name;
         document.getElementById('edit-description').value = item.description;
         document.getElementById('edit-acquisition_date').value = item.acquisition_date || '';
+        document.getElementById('edit-documents').value = '';
         document.getElementById('edit-cost').value = item.cost || '';
         document.getElementById('edit-origin').value = item.origin || '';
         document.getElementById('edit-brand').value = item.brand || '';
         document.getElementById('edit-model').value = item.model || '';
+        document.getElementById('edit-photos').value = '';
         document.getElementById('edit-type').value = item.type || 'private';
 
         // Handle photos
@@ -417,13 +474,14 @@
           item.documents.split(',').forEach(url => {
             const trimmed = url.trim();
             const fileName = trimmed.split('/').pop();
+            const fileNameSimple = trimmed.split('#').pop();
 
             const wrapper = document.createElement('div');
             wrapper.style.marginBottom = '5px';
 
             const link = document.createElement('a');
             link.href = trimmed;
-            link.textContent = fileName;
+            link.textContent = fileNameSimple;
             link.target = '_blank';
 
             const removeBtn = document.createElement('span');
@@ -447,47 +505,47 @@
 
       // Submit edited data
       document.getElementById('editItemForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    const id = document.getElementById('edit-id').value;
-    const formData = new FormData();
-    formData.append('name', document.getElementById('edit-name').value);
-    formData.append('description', document.getElementById('edit-description').value);
-    formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
-    formData.append('cost', document.getElementById('edit-cost').value);
-    formData.append('origin', document.getElementById('edit-origin').value);
-    formData.append('brand', document.getElementById('edit-brand').value);
-    formData.append('model', document.getElementById('edit-model').value);
-    formData.append('type', document.getElementById('edit-type').value);
+        const id = document.getElementById('edit-id').value;
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-name').value);
+        formData.append('description', document.getElementById('edit-description').value);
+        formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
+        formData.append('cost', document.getElementById('edit-cost').value);
+        formData.append('origin', document.getElementById('edit-origin').value);
+        formData.append('brand', document.getElementById('edit-brand').value);
+        formData.append('model', document.getElementById('edit-model').value);
+        formData.append('type', document.getElementById('edit-type').value);
 
-    const photoPreview = document.getElementById('edit-photo-preview');
-    const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
-    const existingPhotos = photoThumbs.map(img => img.src);
-    formData.append('existingPhotos', JSON.stringify(existingPhotos));
+        const photoPreview = document.getElementById('edit-photo-preview');
+        const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
+        const existingPhotos = photoThumbs.map(img => img.src);
+        formData.append('existingPhotos', JSON.stringify(existingPhotos));
 
-    const newPhotos = document.getElementById('edit-photos').files;
-    for (let i = 0; i < newPhotos.length; i++) {
-      formData.append('photos', newPhotos[i]);
-    }
+        const newPhotos = document.getElementById('edit-photos').files;
+        for (let i = 0; i < newPhotos.length; i++) {
+          formData.append('photos', newPhotos[i]);
+        }
 
-    const docPreview = document.getElementById('edit-documents-preview');
-    const docLinks = Array.from(docPreview.getElementsByTagName('a'));
-    const existingDocs = docLinks.map(link => link.href);
-    formData.append('existingDocuments', JSON.stringify(existingDocs));
+        const docPreview = document.getElementById('edit-documents-preview');
+        const docLinks = Array.from(docPreview.getElementsByTagName('a'));
+        const existingDocs = docLinks.map(link => link.href);
+        formData.append('existingDocuments', JSON.stringify(existingDocs));
 
-    const newDocs = document.getElementById('edit-documents').files;
-    for (let i = 0; i < newDocs.length; i++) {
-      formData.append('documents', newDocs[i]);
-    }
+        const newDocs = document.getElementById('edit-documents').files;
+        for (let i = 0; i < newDocs.length; i++) {
+          formData.append('documents', newDocs[i]);
+        }
 
-    await fetch(`/items/${id}`, {
-      method: 'PUT',
-      body: formData
-    });
+        await fetch(`/items/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
 
-    document.getElementById('editModal').style.display = 'none';
-    fetchItems();
-  });
+        document.getElementById('editModal').style.display = 'none';
+        fetchItems();
+      });
       document.getElementById('edit-photos').addEventListener('change', function () {
         const previewContainer = document.getElementById('edit-photos-preview');
         previewContainer.innerHTML = '';
@@ -519,7 +577,7 @@
         const response = await fetch('/user');
         const data = await response.json();
         if (data.username) {
-          document.getElementById('usernameDisplay').innerText = `Welcome, ${data.username}`;
+          document.getElementById('usernameDisplay').innerText = `${data.username}`;
         }
       }
 

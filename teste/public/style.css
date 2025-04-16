@@ -105,6 +105,20 @@ header {
     font-size: 14px;
 }
 
+/* Button to change register to login and vice versa */
+
+
+.login-form .btn-user-page {
+    text-decoration: none;
+    color: #1e90ff;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.login-form .btn-user-page:hover {
+    color:#1c7ed6;
+}
+
 /* Forms */
 form {
     display: flex;
@@ -227,20 +241,68 @@ td button:nth-child(1):hover {
 
 /* Site Header */
 .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    padding: 20px 5%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 5%;
-    background-color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
+  }
+  
 
 .logo {
     font-size: 24px;
     font-weight: bold;
     color: #1e90ff;
 }
-
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  
+  .profile-dropdown {
+    position: relative;
+  }
+  
+  .profile-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #1e90ff;
+  }
+  
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 44px;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    z-index: 1000;
+    min-width: 150px;
+  }
+  
+  .dropdown-menu a {
+    display: block;
+    padding: 10px 15px;
+    color: #2d3748;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+  
+  .dropdown-menu a:hover {
+    background-color: #f1f3f5;
+  }
+  
 .nav-menu {
     display: flex;
     align-items: center;

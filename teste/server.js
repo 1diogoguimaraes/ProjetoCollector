@@ -35,7 +35,15 @@ const storage = multer.diskStorage({
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + file.originalname;
+        const decodedOriginalName = decodeURIComponent(file.originalname);
+
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+        const year = now.getFullYear();
+
+        const formattedDate = `${day}-${month}-${year}`;
+        const uniqueName = /* Date.now() */formattedDate + '#' + decodedOriginalName;
         cb(null, uniqueName);
     }
 });
@@ -49,7 +57,7 @@ app.use(express.json());
 //app.use(express.static('public')); 
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
- // Serve static files (HTML, CSS)
+// Serve static files (HTML, CSS)
 app.use(session({
     secret: 'your_secret_key',
     resave: false,
@@ -96,7 +104,7 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
-app.get('/add-item', (req, res) => res.sendFile(path.join(__dirname,'public', 'add-item.html')));
+app.get('/add-item', (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
 
 
 
@@ -181,29 +189,29 @@ app.use('/items', isLoggedIn);
 app.post('/items', isLoggedIn, upload.fields([
     { name: 'photos', maxCount: 10 },
     { name: 'documents', maxCount: 10 }
-  ]), (req, res) => {
+]), (req, res) => {
     const { name, description, acquisition_date, cost, origin, brand, model, type } = req.body;
     const userId = req.session.userId;
-  
+
     const photos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`).join(',');
     const documents = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`).join(',');
-  
+
     const query = `
       INSERT INTO items 
       (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, userId];
-  
+
     db.query(query, values, (err, result) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send('Error inserting item');
-      }
-      res.status(200).send('Item added successfully');
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error inserting item');
+        }
+        res.status(200).send('Item added successfully');
     });
-  });
-  
+});
+
 
 
 
@@ -212,21 +220,21 @@ app.post('/items', isLoggedIn, upload.fields([
 app.get('/items', isLoggedIn, (req, res) => {
     const searchQuery = req.query.search || '';
     const allowedFields = ['name', 'description', 'brand', 'model', 'origin']; // whitelist
-  
+
     const field = allowedFields.includes(req.query.field) ? req.query.field : 'name'; // fallback to name
-  
+
     const query = `SELECT * FROM items WHERE user_id = ? AND ${field} LIKE ?`;
     const values = [req.session.userId, `%${searchQuery}%`];
-  
+
     db.query(query, values, (err, results) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send('Error fetching items');
-      }
-      res.json(results);
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error fetching items');
+        }
+        res.json(results);
     });
-  });
-  
+});
+
 
 
 
@@ -261,23 +269,23 @@ app.get('/items/:id', isLoggedIn, (req, res) => {
 });
 
 
-  // Update an item
-  // Update an item
-  app.put('/items/:id', isLoggedIn, upload.fields([
+// Update an item
+// Update an item
+app.put('/items/:id', isLoggedIn, upload.fields([
     { name: 'photos', maxCount: 10 },
     { name: 'documents', maxCount: 10 }
-  ]), (req, res) => {
+]), (req, res) => {
     const itemId = req.params.id;
     const updatedItem = req.body;
-  
+
     const existingPhotos = req.body.existingPhotos ? JSON.parse(req.body.existingPhotos) : [];
     const newPhotos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`);
     const allPhotos = [...existingPhotos, ...newPhotos];
-  
+
     const existingDocuments = req.body.existingDocuments ? JSON.parse(req.body.existingDocuments) : [];
     const newDocuments = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`);
     const allDocuments = [...existingDocuments, ...newDocuments];
-  
+
     const query = `
       UPDATE items 
       SET 
@@ -294,34 +302,34 @@ app.get('/items/:id', isLoggedIn, (req, res) => {
       WHERE id = ? AND user_id = ?
     `;
     const values = [
-      updatedItem.name,
-      updatedItem.description,
-      updatedItem.acquisition_date,
-      updatedItem.cost,
-      updatedItem.origin,
-      allDocuments.join(','),
-      updatedItem.brand,
-      updatedItem.model,
-      allPhotos.join(','),
-      updatedItem.type,
-      itemId,
-      req.session.userId
+        updatedItem.name,
+        updatedItem.description,
+        updatedItem.acquisition_date,
+        updatedItem.cost,
+        updatedItem.origin,
+        allDocuments.join(','),
+        updatedItem.brand,
+        updatedItem.model,
+        allPhotos.join(','),
+        updatedItem.type,
+        itemId,
+        req.session.userId
     ];
-  
+
     db.query(query, values, (err, result) => {
-      if (err) {
-        console.error('Error updating item:', err);
-        return res.status(500).send('Error updating item');
-      }
-  
-      res.json({ message: 'Item updated successfully', item: updatedItem });
+        if (err) {
+            console.error('Error updating item:', err);
+            return res.status(500).send('Error updating item');
+        }
+
+        res.json({ message: 'Item updated successfully', item: updatedItem });
     });
-  });
-  
+});
 
 
-  
-  
+
+
+
 
 
 
