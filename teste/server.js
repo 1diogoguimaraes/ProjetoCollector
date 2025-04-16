@@ -43,7 +43,7 @@ const storage = multer.diskStorage({
         const year = now.getFullYear();
 
         const formattedDate = `${day}-${month}-${year}`;
-        const uniqueName = /* Date.now() */formattedDate + '#' + decodedOriginalName;
+        const uniqueName = /* Date.now() */formattedDate + '___' + decodedOriginalName;
         cb(null, uniqueName);
     }
 });
@@ -106,7 +106,7 @@ app.get('/login', (req, res) => {
 });
 app.get('/add-item', (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
 
-
+app.get('/forum', (req, res) => res.sendFile(path.join(__dirname, 'public', 'forum.html')));
 
 // Serve the main collection page (after login)
 
@@ -195,7 +195,6 @@ app.post('/items', isLoggedIn, upload.fields([
 
     const photos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`).join(',');
     const documents = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`).join(',');
-
     const query = `
       INSERT INTO items 
       (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id)
@@ -208,6 +207,7 @@ app.post('/items', isLoggedIn, upload.fields([
             console.error(err);
             return res.status(500).send('Error inserting item');
         }
+        console.log(result.values)
         res.status(200).send('Item added successfully');
     });
 });
@@ -234,6 +234,45 @@ app.get('/items', isLoggedIn, (req, res) => {
         res.json(results);
     });
 });
+
+// Fetch items for logged in user FORUM
+app.get('/itemsForum', isLoggedIn, (req, res) => {
+    const searchQuery = req.query.search || '';
+
+    // ✅ Now includes 'username' as allowed search field
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'username'];
+
+    const field = allowedFields.includes(req.query.field) ? req.query.field : 'name';
+
+    // ✅ Proper table prefixing
+    const fieldMap = {
+        name: 'items.name',
+        description: 'items.description',
+        brand: 'items.brand',
+        model: 'items.model',
+        origin: 'items.origin',
+        username: 'users.username'
+    };
+
+    const dbField = fieldMap[field];
+
+    const query = `
+        SELECT items.*, users.username 
+        FROM items 
+        JOIN users ON items.user_id = users.id 
+        WHERE items.type = 'public' AND ${dbField} LIKE ?
+    `;
+    const values = [`%${searchQuery}%`];
+
+    db.query(query, values, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error fetching items');
+        }
+        res.json(results);
+    });
+});
+
 
 
 

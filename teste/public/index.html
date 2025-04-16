@@ -29,7 +29,7 @@
       <a href="#">Home</a>
       <a href="/" id="searchTab" class="active">Search</a>
       <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
-      <a href="#">Forum</a>
+      <a href="/forum">Forum</a>
 
     </nav>
     <div class="user-profile">
@@ -265,7 +265,7 @@ window.addEventListener('click', (event) => {
           row.innerHTML = `
           <td>${item.name}</td>
           <td>${item.description}</td>
-          <td>${item.acquisition_date || 'N/A'}</td>
+          <td>${item.acquisition_date.split('T').shift() || 'N/A'}</td>
           <td>${item.cost || 'N/A'}</td>
           <td>${item.origin || 'N/A'}</td>
           <td>
@@ -275,8 +275,8 @@ window.addEventListener('click', (event) => {
                 .map((doc, index) => {
                   const trimmed = doc.trim();
                   const fileName = trimmed.split('/').pop(); // get file name from URL
-                  const fileNameSimple = trimmed.split('#').pop();
-                  const fileDateAdded = fileName.split('#').shift();
+                  const fileNameSimple = trimmed.split('___').pop();
+                  const fileDateAdded = fileName.split('___').shift();
                   return `
               <div style="display:flex; align-items:center; gap:6px;">
                 <p style="font-size:12px; color:lightgrey">${fileDateAdded}</p><a href="${trimmed}" download="${fileName}" target="_blank">${fileNameSimple}</a>

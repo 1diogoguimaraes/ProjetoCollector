@@ -10,18 +10,35 @@
 </head>
 
 <body>
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <p>Are you sure you want to logout?</p>
+      <div class="modal-buttons">
+        <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
+        <button id="cancelLogout" class="btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
   <header class="site-header">
     <div class="logo">MyApp</div>
     <nav class="nav-menu">
       <a href="#">Home</a>
       <a href="/" id="searchTab">Search</a>
-      <a href="/add-item" id="addItemTab" class="active">Add Item</a>
+      <a href="/add-item" id="addItemTab" class="active">Add Item</a> <!-- updated -->
       <a href="#">Forum</a>
+
     </nav>
-    <div>
-      <span id="usernameDisplay">Welcome, </span>
-      <button id="logoutBtn">Logout</button>
-    </div>
+    <div class="user-profile">
+      <span id="usernameDisplay"></span>
+      <div class="profile-dropdown">
+        <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <div class="dropdown-menu" id="profileDropdown">
+          <a href="#">Profile</a><!-- /profile -->
+          <a href="#">Settings</a><!-- /settings -->
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+
   </header>
 
   <div class="container">
@@ -50,16 +67,57 @@
   </div>
 
   <script>
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
+    // Logout
+    const profileImg = document.getElementById('profileImg');
+    const profileDropdown = document.getElementById('profileDropdown');
+
+    profileImg.addEventListener('click', () => {
+      profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
+        profileDropdown.style.display = 'none';
+      }
+    });
+
+    // Hook logout from dropdown
+    document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
+      e.preventDefault(); // Prevent default action of the link
+
+      // Show the custom modal
+      const logoutModal = document.getElementById('logoutModal');
+      logoutModal.style.display = 'flex';
+    });
+    // Handle confirm logout
+    document.getElementById('confirmLogout').addEventListener('click', async () => {
       await fetch('/logout', { method: 'POST' });
       window.location.href = '/login';
     });
+
+    // Handle cancel logout
+    document.getElementById('cancelLogout').addEventListener('click', () => {
+      const logoutModal = document.getElementById('logoutModal');
+      logoutModal.style.display = 'none'; // Close the modal
+    });
+
+    // Close the modal if the user clicks outside of it
+    window.addEventListener('click', (event) => {
+      const logoutModal = document.getElementById('logoutModal');
+      if (event.target === logoutModal) {
+        logoutModal.style.display = 'none'; // Close the modal if clicked outside
+      }
+    });
+
+
+
 
     async function loadUserInfo() {
       const response = await fetch('/user');
       const data = await response.json();
       if (data.username) {
-        document.getElementById('usernameDisplay').innerText = `Welcome, ${data.username}`;
+        document.getElementById('usernameDisplay').innerText = `${data.username}`;
       }
     }
 
@@ -69,10 +127,11 @@
       const formData = new FormData();
       formData.append('name', document.getElementById('name').value.trim());
       formData.append('description', document.getElementById('description').value.trim());
-
+/*       formData.append('acquisition_date', document.getElementById('acquisition_date').value);
+ */
       const rawDate = document.getElementById('acquisition_date').value;
-      /*       const formattedDate = new Date(rawDate).toISOString().split('T')[0];
-            formData.append('acquisition_date', formattedDate); */
+      const formattedDate = new Date(rawDate).toISOString().split('T').shift();
+      formData.append('acquisition_date', formattedDate);
 
 
       formData.append('cost', document.getElementById('cost').value);

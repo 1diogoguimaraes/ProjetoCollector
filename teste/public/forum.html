@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Collection</title>
+    <link rel="stylesheet" href="/public/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <p>Are you sure you want to logout?</p>
+            <div class="modal-buttons">
+                <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancelLogout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <!-- Top Banner -->
+
+
+    <!-- Header Nav -->
+    <header class="site-header">
+        <div class="logo">MyApp</div>
+        <nav class="nav-menu">
+            <a href="#">Home</a>
+            <a href="/" id="searchTab">Search</a>
+            <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+            <a href="/forum" class="active">Forum</a>
+
+        </nav>
+        <div class="user-profile">
+            <span id="usernameDisplay"></span>
+            <div class="profile-dropdown">
+                <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+                <div class="dropdown-menu" id="profileDropdown">
+                    <a href="#">Profile</a><!-- /profile -->
+                    <a href="#">Settings</a><!-- /settings -->
+                    <a href="#" id="logoutBtnDropdown">Logout</a>
+                </div>
+            </div>
+
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- User Info 
+    <header>
+      <div class="user-info">
+        <span id="usernameDisplay">Welcome, </span>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </header>
+    -->
+
+        <!-- Top Menu -->
+        <!--     
+    <nav class="menu">
+      <button id="searchTab" class="active">🔍 Search</button>
+      <button id="addItemTab">➕ Add Item</button>
+    </nav> -->
+
+
+
+        <!-- Search Section -->
+        <div id="searchSection" class="section active">
+            <select id="searchField">
+                <option value="name">Name</option>
+                <option value="description">Description</option>
+                <option value="brand">Brand</option>
+                <option value="model">Model</option>
+                <option value="origin">Origin</option>
+                <option value="username">Username</option>
+            </select>
+            <input type="text" id="search" placeholder="Search Collection">
+            <table id="itemTable" border="1" cellpadding="8" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Acquisition Date</th>
+                        <th>Cost</th>
+                        <th>Origin</th>
+                        <th>Documents</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>Photos</th>
+                        <th>From User</th>
+                    </tr>
+                </thead>
+                <tbody id="itemList"></tbody>
+            </table>
+        </div>
+    </div>
+    <div id="imageModal" class="modal"
+        style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); justify-content:center; align-items:center;">
+
+        <span id="closeModal"
+            style="position:absolute; top:20px; right:30px; color:#fff; font-size:30px; cursor:pointer;">&times;</span>
+
+        <span id="prevImage"
+            style="position:absolute; left:30px; color:#fff; font-size:40px; cursor:pointer;">&#10094;</span>
+        <img id="modalImage" style="max-width:90%; max-height:90%; border-radius:8px;" />
+        <span id="nextImage"
+            style="position:absolute; right:30px; color:#fff; font-size:40px; cursor:pointer;">&#10095;</span>
+    </div>
+
+    <script>
+        // Logout
+        const profileImg = document.getElementById('profileImg');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        profileImg.addEventListener('click', () => {
+            profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
+                profileDropdown.style.display = 'none';
+            }
+        });
+
+        // Hook logout from dropdown
+        document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent default action of the link
+
+            // Show the custom modal
+            const logoutModal = document.getElementById('logoutModal');
+            logoutModal.style.display = 'flex';
+        });
+
+        // Handle confirm logout
+        document.getElementById('confirmLogout').addEventListener('click', async () => {
+            await fetch('/logout', { method: 'POST' });
+            window.location.href = '/login';
+        });
+
+        // Handle cancel logout
+        document.getElementById('cancelLogout').addEventListener('click', () => {
+            const logoutModal = document.getElementById('logoutModal');
+            logoutModal.style.display = 'none'; // Close the modal
+        });
+
+        // Close the modal if the user clicks outside of it
+        window.addEventListener('click', (event) => {
+            const logoutModal = document.getElementById('logoutModal');
+            if (event.target === logoutModal) {
+                logoutModal.style.display = 'none'; // Close the modal if clicked outside
+            }
+        });
+
+
+        async function loadUserInfo() {
+            const response = await fetch('/user');
+            const data = await response.json();
+            if (data.username) {
+                document.getElementById('usernameDisplay').innerText = `${data.username}`;
+            }
+        }
+
+        //Fetch items FORUM
+        async function fetchItems() {
+            const searchQuery = document.getElementById('search').value;
+            const searchField = document.getElementById('searchField').value;
+
+            const response = await fetch(`/itemsForum?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}`);
+
+            const items = await response.json();
+            const itemList = document.getElementById('itemList');
+            itemList.innerHTML = '';
+
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.description}</td>
+          <td>${item.acquisition_date.split('T').shift() || 'N/A'}</td>
+          <td>${item.cost || 'N/A'}</td>
+          <td>${item.origin || 'N/A'}</td>
+          <td>${item.documents ? item.documents.split(',').map((doc, index) => {
+                    const trimmed = doc.trim();
+                    const fileName = trimmed.split('/').pop(); // get file name from URL
+                    const fileNameSimple = trimmed.split('___').pop();
+                    const fileDateAdded = fileName.split('___').shift();
+                    return `
+              <div style="display:flex; align-items:center; gap:6px;">
+                <p style="font-size:12px; color:lightgrey">${fileDateAdded}</p><a href="${trimmed}" download="${fileName}" target="_blank">${fileNameSimple}</a>
+                              </div>
+            `;
+                })
+                        .join('')
+                        : 'No documents'
+                    }</td>
+
+          <td>${item.brand || 'N/A'}</td>
+          <td>${item.model || 'N/A'}</td>
+          <td>${item.photos
+                        ? (() => {
+                            const urls = item.photos.split(',').map(u => u.trim());
+                            return urls
+                                .map(
+                                    (url, index) =>
+                                        `<img src="${url}" alt="photo" style="width:50px;height:auto;margin-right:4px; cursor:pointer;" onclick="openImageModal('${urls.join('|')}', ${index})">`
+                                )
+                                .join('');
+                        })()
+                        : 'No images'
+                    }</td>
+
+
+
+
+          <td>${item.username || 'N/A'}</td>
+        `;
+                itemList.appendChild(row);
+            });
+        }
+
+        let currentImageIndex = 0;
+        let currentImageList = [];
+
+        function openImageModal(clickedUrl) {
+            currentImageList = clickedUrl.split('|'); // we’ll send images joined with "|" from HTML
+            currentImageIndex = 0;
+
+            showImage(currentImageIndex);
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function showImage(index) {
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = currentImageList[index];
+        }
+
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('imageModal').style.display = 'none';
+        });
+
+        document.getElementById('prevImage').addEventListener('click', () => {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
+                showImage(currentImageIndex);
+            }
+        });
+
+        document.getElementById('nextImage').addEventListener('click', () => {
+            if (currentImageIndex < currentImageList.length - 1) {
+                currentImageIndex++;
+                showImage(currentImageIndex);
+            }
+        });
+
+        document.getElementById('imageModal').addEventListener('click', (e) => {
+            if (e.target.id === 'imageModal') {
+                document.getElementById('imageModal').style.display = 'none';
+            }
+        });
+
+        document.getElementById('search').addEventListener('input', fetchItems);
+        document.getElementById('searchField').addEventListener('change', fetchItems);
+        loadUserInfo();
+        fetchItems();
+    </script>
+</body>
