@@ -22,17 +22,18 @@
   <header class="site-header">
     <div class="logo">MyApp</div>
     <nav class="nav-menu">
-      <a href="#">Home</a>
-      <a href="/" id="searchTab">Search</a>
+      <a href="/" >Home</a>
+      <a href="/index" id="searchTab" >Search</a>
       <a href="/add-item" id="addItemTab" class="active">Add Item</a> <!-- updated -->
-      <a href="#">Forum</a>
+      <a href="/forum">Forum</a>
 
     </nav>
     <div class="user-profile">
-      <span id="usernameDisplay"></span>
+
       <div class="profile-dropdown">
         <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
         <div class="dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
           <a href="#">Profile</a><!-- /profile -->
           <a href="#">Settings</a><!-- /settings -->
           <a href="#" id="logoutBtnDropdown">Logout</a>

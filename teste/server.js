@@ -67,6 +67,9 @@ app.use(session({
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
+app.get('/home', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
 
 // Register API
 app.post('/register', (req, res) => {
@@ -104,9 +107,9 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
-app.get('/add-item', (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
+app.get('/add-item',isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
 
-app.get('/forum', (req, res) => res.sendFile(path.join(__dirname, 'public', 'forum.html')));
+app.get('/forum',isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'forum.html')));
 
 // Serve the main collection page (after login)
 
@@ -118,8 +121,11 @@ app.get('/forum', (req, res) => res.sendFile(path.join(__dirname, 'public', 'for
 //    }
 //});
 
-app.get('/', isLoggedIn, (req, res) => {
+app.get('/index', isLoggedIn, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 app.get('/login', (req, res) => {
     if (req.session.userId) {
