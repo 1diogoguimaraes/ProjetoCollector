@@ -5,6 +5,7 @@ const mysql = require('mysql');
 const session = require('express-session');
 const path = require('path');
 
+
 const app = express();
 const port = 3000;
 
@@ -420,6 +421,18 @@ app.delete('/items/:id', (req, res) => {
         res.json({ message: 'Item deleted' });
     });
 });
+
+
+/////////////////////////////////////////////////////
+
+
+
+
+//////////////////////////////////////
+
+
+
+
 
 
 
