@@ -77,7 +77,7 @@
         <option value="origin">Origin</option>
       </select>
       <input type="text" id="search" placeholder="Search Collection">
-
+      <button onclick="fetchItems()">Search</button>
 
       <table id="itemTable" border="1" cellpadding="8" cellspacing="0">
         <thead>
@@ -228,6 +228,12 @@
       
 
       //////////////////////////////////////////////////
+      document.getElementById('search').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // prevent accidental form submission
+      fetchItems();
+    }
+  });
 
       function popFromEnd(str, delimiter) {
         const index = str.lastIndexOf(delimiter);
