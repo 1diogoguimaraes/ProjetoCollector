@@ -28,14 +28,21 @@ const fs = require('fs');
 // Store uploads in public/uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, 'public', 'uploads');
+        let folder = 'others';
+        if (file.fieldname === 'photos') {
+            folder = 'photos';
+        } else if (file.fieldname === 'documents') {
+            folder = 'documents';
+        }
+
+        const uploadPath = path.join(__dirname, 'public', 'uploads', folder);
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath);
+            fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        const decodedOriginalName = decodeURIComponent(file.originalname);
+        const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
 
         const now = new Date();
         const day = String(now.getDate()).padStart(2, '0');
@@ -107,9 +114,9 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
-app.get('/add-item',isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
+app.get('/add-item', isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-item.html')));
 
-app.get('/forum',isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'forum.html')));
+app.get('/forum', isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'public', 'forum.html')));
 
 // Serve the main collection page (after login)
 
@@ -126,6 +133,9 @@ app.get('/index', isLoggedIn, (req, res) => {
 });
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+app.get('/home_test', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'home_test.html'));
 });
 app.get('/login', (req, res) => {
     if (req.session.userId) {
@@ -199,8 +209,8 @@ app.post('/items', isLoggedIn, upload.fields([
     const { name, description, acquisition_date, cost, origin, brand, model, type } = req.body;
     const userId = req.session.userId;
 
-    const photos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`).join(',');
-    const documents = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`).join(',');
+    const photos = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`).join(',');
+    const documents = (req.files.documents || []).map(file => `/public/uploads/documents/${file.filename}`).join(',');
     const query = `
       INSERT INTO items 
       (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id)
@@ -213,7 +223,20 @@ app.post('/items', isLoggedIn, upload.fields([
             console.error(err);
             return res.status(500).send('Error inserting item');
         }
-        console.log(result.values)
+        console.log('Inserted item:', {
+            id: result.insertId, // This is the new item's ID
+            name,
+            description,
+            acquisition_date,
+            cost,
+            origin,
+            documents,
+            brand,
+            model,
+            photos,
+            type,
+            userId
+        });
         res.status(200).send('Item added successfully');
     });
 });
@@ -324,12 +347,20 @@ app.put('/items/:id', isLoggedIn, upload.fields([
     const updatedItem = req.body;
 
     const existingPhotos = req.body.existingPhotos ? JSON.parse(req.body.existingPhotos) : [];
-    const newPhotos = (req.files.photos || []).map(file => `/public/uploads/${file.filename}`);
+    const newPhotos = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`);
     const allPhotos = [...existingPhotos, ...newPhotos];
 
-    const existingDocuments = req.body.existingDocuments ? JSON.parse(req.body.existingDocuments) : [];
-    const newDocuments = (req.files.documents || []).map(file => `/public/uploads/${file.filename}`);
-    const allDocuments = [...existingDocuments, ...newDocuments];
+    //const existingDocuments = req.body.existingDocuments ? JSON.parse(req.body.existingDocuments) : [];
+    let existingDocuments = [];
+    try {
+        existingDocuments = JSON.parse(req.body.existingDocuments || '[]');
+    } catch (e) {
+        console.error('Invalid JSON for existingDocuments', e);
+    }
+    const newDocuments = (req.files.documents || []).map(file => `/public/uploads/documents/${file.filename}`);
+    //const allDocuments = [...existingDocuments, ...newDocuments];
+    const allDocuments = Array.from(new Set([...existingDocuments, ...newDocuments]));
+
 
     const query = `
       UPDATE items 

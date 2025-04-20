@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Collection</title>
   <link rel="stylesheet" href="/public/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 
@@ -27,16 +28,16 @@
     <div class="logo">MyApp</div>
     <nav class="nav-menu">
       <a href="/">Home</a>
-      <a href="/index" id="searchTab" class="active">Search</a>
+      <a href="/index" id="searchTab" class="active">Items</a>
       <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
       <a href="/forum">Forum</a>
 
     </nav>
     <div class="user-profile">
-      <span id="usernameDisplay"></span>
       <div class="profile-dropdown">
         <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
         <div class="dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
           <a href="#">Profile</a><!-- /profile -->
           <a href="#">Settings</a><!-- /settings -->
           <a href="#" id="logoutBtnDropdown">Logout</a>
@@ -44,6 +45,7 @@
       </div>
 
   </header>
+
 
   <!-- Main Container -->
   <div class="container">
@@ -130,36 +132,76 @@
     <!-- Edit Item Modal -->
     <div id="editModal" class="modal">
       <div class="modal-content">
-        <h3>Edit Item</h3>
-        <form id="editItemForm">
-          <input type="hidden" id="edit-id">
-          <input type="text" id="edit-name" placeholder="Item Name" required>
-          <input type="text" id="edit-description" placeholder="Description" required>
-          <input type="date" id="edit-acquisition_date" placeholder="Acquisition Date">
-          <input type="number" id="edit-cost" placeholder="Cost">
-          <input type="text" id="edit-origin" placeholder="Origin">
+        <h2>Edit Item</h2>
+        <div class="modal-scroll">
+          <form id="editItemForm">
+            <input type="hidden" id="edit-id">
 
-          <!-- Updated document input with preview -->
-          <div id="edit-documents-preview" style="margin-bottom: 10px;"></div>
-          <input type="file" id="edit-documents" name="documents" multiple
-            accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+            <div class="form-group">
+              <label for="edit-name">Item Name</label>
+              <input type="text" id="edit-name" placeholder="Item Name" required>
+            </div>
 
-          <input type="text" id="edit-brand" placeholder="Brand">
-          <input type="text" id="edit-model" placeholder="Model">
+            <div class="form-group">
+              <label for="edit-description">Description</label>
+              <input type="text" id="edit-description" placeholder="Description" required>
+            </div>
 
-          <!-- Photo preview -->
-          <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;"></div>
-          <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
+            <div class="form-group">
+              <label for="edit-acquisition_date">Acquisition Date</label>
+              <input type="date" id="edit-acquisition_date" placeholder="Acquisition Date">
+            </div>
 
-          <select id="edit-type">
-            <option value="private">Private</option>
-            <option value="public">Public</option>
-          </select>
-          <div class="modal-buttons">
-            <button type="submit" class="btn-confirm">Update</button>
-            <button type="button" id="cancelEditBtn" class="btn-cancel">Cancel</button>
-          </div>
-        </form>
+            <div class="form-group">
+              <label for="edit-cost">Item Cost</label>
+              <input type="number" id="edit-cost" placeholder="Cost">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-origin">Origin</label>
+              <input type="text" id="edit-origin" placeholder="Origin">
+            </div>
+
+            <!-- Updated document input with preview -->
+            <div class="form-group">
+              <label for="edit-documents">Upload Documents</label>
+              <div id="edit-documents-preview" style="margin-bottom: 10px;"></div>
+              <input type="file" id="edit-documents" name="documents" multiple
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-brand">Item Brand</label>
+              <input type="text" id="edit-brand" placeholder="Brand">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-model">Item Model</label>
+              <input type="text" id="edit-model" placeholder="Model">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-photos">Upload Photos</label>
+              <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+              </div>
+              <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-type">Collection Type</label>
+              <select id="edit-type">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
+            <div class="modal-buttons">
+              <button type="submit" class="btn-confirm">Update</button>
+              <button type="button" id="cancelEditBtn" class="btn-cancel">Cancel</button>
+            </div>
+
+          </form>
+        </div>
+
       </div>
     </div>
     <div id="imageModal" class="modal"
@@ -179,6 +221,11 @@
 
     <!-- Script -->
     <script>
+      function popFromEnd(str, delimiter) {
+        const index = str.lastIndexOf(delimiter);
+        if (index === -1) return [str, '']; // No delimiter found
+        return [str.slice(0, index), str.slice(index + delimiter.length)];
+      }
       // Logout
       const profileImg = document.getElementById('profileImg');
       const profileDropdown = document.getElementById('profileDropdown');
@@ -196,32 +243,32 @@
 
       // Hook logout from dropdown
       document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
-  e.preventDefault(); // Prevent default action of the link
-  
-  // Show the custom modal
-  const logoutModal = document.getElementById('logoutModal');
-  logoutModal.style.display = 'flex';
-});
+        e.preventDefault(); // Prevent default action of the link
 
-// Handle confirm logout
-document.getElementById('confirmLogout').addEventListener('click', async () => {
-  await fetch('/logout', { method: 'POST' });
-  window.location.href = '/login';
-});
+        // Show the custom modal
+        const logoutModal = document.getElementById('logoutModal');
+        logoutModal.style.display = 'flex';
+      });
 
-// Handle cancel logout
-document.getElementById('cancelLogout').addEventListener('click', () => {
-  const logoutModal = document.getElementById('logoutModal');
-  logoutModal.style.display = 'none'; // Close the modal
-});
+      // Handle confirm logout
+      document.getElementById('confirmLogout').addEventListener('click', async () => {
+        await fetch('/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
 
-// Close the modal if the user clicks outside of it
-window.addEventListener('click', (event) => {
-  const logoutModal = document.getElementById('logoutModal');
-  if (event.target === logoutModal) {
-    logoutModal.style.display = 'none'; // Close the modal if clicked outside
-  }
-});
+      // Handle cancel logout
+      document.getElementById('cancelLogout').addEventListener('click', () => {
+        const logoutModal = document.getElementById('logoutModal');
+        logoutModal.style.display = 'none'; // Close the modal
+      });
+
+      // Close the modal if the user clicks outside of it
+      window.addEventListener('click', (event) => {
+        const logoutModal = document.getElementById('logoutModal');
+        if (event.target === logoutModal) {
+          logoutModal.style.display = 'none'; // Close the modal if clicked outside
+        }
+      });
 
 
       // Tab Switching
@@ -277,10 +324,31 @@ window.addEventListener('click', (event) => {
                   const fileName = trimmed.split('/').pop(); // get file name from URL
                   const fileNameSimple = trimmed.split('___').pop();
                   const fileDateAdded = fileName.split('___').shift();
+
+                  // Get file extension
+                  const ext = fileNameSimple.split('.').pop().toLowerCase();
+                  console.log(ext)
+                  // Choose icon based on extension
+                  let iconClass = 'fa-file'; // default
+                  if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                  else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                  else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                  else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                  //else if (['png', 'jpg', 'jpeg', 'gif', 'bmp'].includes(ext)) iconClass = 'fa-file-image';
+                  else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                  else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+                  console.log('File:', fileName);
+                  console.log('Ext:', ext);
                   return `
-              <div style="display:flex; align-items:center; gap:6px;">
-                <p style="font-size:12px; color:lightgrey">${fileDateAdded}</p><a href="${trimmed}" download="${fileName}" target="_blank">${fileNameSimple}</a>
-                              </div>
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+    <p style="font-size:12px; color:lightgrey; margin:0;">${fileDateAdded}</p>
+    <a href="${trimmed}" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:4px;" title="Preview">
+      <i class="fas ${iconClass}" style="color:grey;"></i> ${fileNameSimple}
+    </a>
+    <a href="${trimmed}" download="${fileName}" style="text-decoration:none;" title="Download">
+      <i class="fas fa-download" style="color:darkgrey;"></i>
+    </a>
+  </div>
             `;
                 })
                 .join('')
@@ -445,11 +513,21 @@ window.addEventListener('click', (event) => {
       async function editItem(id) {
         const response = await fetch(`/items/${id}`);
         const item = await response.json();
-
+        console.log(item)
         document.getElementById('edit-id').value = item.id;
         document.getElementById('edit-name').value = item.name;
         document.getElementById('edit-description').value = item.description;
-        document.getElementById('edit-acquisition_date').value = item.acquisition_date || '';
+
+        if (item.acquisition_date) {
+          const date = new Date(item.acquisition_date);
+          const formatted = date.getFullYear() + '-' +
+            String(date.getMonth() + 1).padStart(2, '0') + '-' +
+            String(date.getDate()).padStart(2, '0');
+          document.getElementById('edit-acquisition_date').value = formatted;
+        } else {
+          document.getElementById('edit-acquisition_date').value = '';
+        }
+
         document.getElementById('edit-documents').value = '';
         document.getElementById('edit-cost').value = item.cost || '';
         document.getElementById('edit-origin').value = item.origin || '';
@@ -474,7 +552,7 @@ window.addEventListener('click', (event) => {
           item.documents.split(',').forEach(url => {
             const trimmed = url.trim();
             const fileName = trimmed.split('/').pop();
-            const fileNameSimple = trimmed.split('#').pop();
+            const fileNameSimple = trimmed.split('___').pop();
 
             const wrapper = document.createElement('div');
             wrapper.style.marginBottom = '5px';
@@ -530,7 +608,10 @@ window.addEventListener('click', (event) => {
 
         const docPreview = document.getElementById('edit-documents-preview');
         const docLinks = Array.from(docPreview.getElementsByTagName('a'));
-        const existingDocs = docLinks.map(link => link.href);
+        //const existingDocs = docLinks.map(link => link.href);
+        const existingDocs = docLinks.map(link => decodeURIComponent(new URL(link.href).pathname));
+        console.log(existingDocs)
+
         formData.append('existingDocuments', JSON.stringify(existingDocs));
 
         const newDocs = document.getElementById('edit-documents').files;

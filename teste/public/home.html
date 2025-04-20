@@ -6,116 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home | MyApp</title>
     <link rel="stylesheet" href="/public/style.css" />
-    <style>
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f2027;
-            /* fallback if image fails */
-            color: #e4f0ff;
-        }
 
-        .home-hero {
-            height: 100vh;
-            width: 100vw;
-            background: url('/public/images/home-bg.png') no-repeat center center;
-            background-size: cover;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            text-align: center;
-        }
-
-        .home-hero::before {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 32, 39, 0.6);
-            /* darkened overlay for contrast */
-            z-index: 1;
-        }
-
-        .home-hero-content {
-            position: relative;
-            z-index: 2;
-            padding: 0 20px;
-        }
-
-        .home-hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ffffff;
-        }
-
-        .home-hero p {
-            font-size: 1.25rem;
-            max-width: 600px;
-            margin: 0 auto;
-            color: #d3eafd;
-        }
-
-        header.site-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 20px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(10, 25, 35, 0.85);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-            z-index: 3;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #78d6ff;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            font-size: 1rem;
-            color: #d6eaf8;
-            transition: color 0.2s ease;
-        }
-
-        .nav-menu a:hover,
-        .nav-menu a.active {
-            color: #5ecbf1;
-        }
-
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .profile-img {
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            border-radius: 50%;
-            border: 2px solid #78d6ff;
-        }
-
-        .dropdown-menu {
-            display: none;
-            /* enable with JS if needed */
-        }
-    </style>
 </head>
 
 <body>
@@ -124,7 +15,7 @@
         <div class="logo">MyApp</div>
         <nav class="nav-menu">
             <a href="/" class="active">Home</a>
-            <a href="/index" id="searchTab">Search</a>
+            <a href="/index" id="searchTab">Items</a>
             <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
             <a href="/forum">Forum</a>
         </nav>
@@ -134,10 +25,10 @@
 
         <div class="user-profile" id="userProfile" style="display: none;">
 
-            <span id="usernameDisplay"></span>
             <div class="profile-dropdown">
                 <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
                 <div class="dropdown-menu" id="profileDropdown">
+                    <div id="usernameDisplay" class="dropdown-username"></div>
                     <a href="#">Profile</a>
                     <a href="#">Settings</a>
                     <a href="#" id="logoutBtnDropdown">Logout</a>
@@ -146,14 +37,13 @@
         </div>
     </header>
 
-    <section class="home-hero">
+    <div class="container">
         <div class="home-hero-content">
             <h1>Welcome to MyApp</h1>
             <p>Your go-to platform for discovery, collaboration, and community connection.</p>
-
         </div>
 
-    </section>
+    </div>
 
 
     <script>

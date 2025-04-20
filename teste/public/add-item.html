@@ -22,8 +22,8 @@
   <header class="site-header">
     <div class="logo">MyApp</div>
     <nav class="nav-menu">
-      <a href="/" >Home</a>
-      <a href="/index" id="searchTab" >Search</a>
+      <a href="/">Home</a>
+      <a href="/index" id="searchTab">Items</a>
       <a href="/add-item" id="addItemTab" class="active">Add Item</a> <!-- updated -->
       <a href="/forum">Forum</a>
 
@@ -45,22 +45,55 @@
   <div class="container">
     <h2>Add a New Item</h2>
     <form id="addItemForm">
-      <input type="text" id="name" placeholder="Item Name" required>
-      <input type="text" id="description" placeholder="Description" required>
-      <input type="date" id="acquisition_date" placeholder="Acquisition Date">
-      <input type="number" id="cost" placeholder="Cost">
-      <input type="text" id="origin" placeholder="Origin">
-      <input type="file" id="documents" name="documents" multiple
-        accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+      <div class="form-group">
+        <label for="name">Item Name</label>
+        <input type="text" id="name" placeholder="Item Name" required>
+      </div>
 
-      <input type="text" id="brand" placeholder="Brand">
-      <input type="text" id="model" placeholder="Model">
-      <input type="file" id="photos" name="photos" multiple accept="image/*">
+      <div class="form-group">
+        <label for="description">Description</label>
+        <input type="text" id="description" placeholder="Description" required>
+      </div>
 
-      <select id="type">
-        <option value="private">Private</option>
-        <option value="public">Public</option>
-      </select>
+      <div class="form-group">
+        <label for="acquisition_date">Acquisition Date</label>
+        <input type="date" id="acquisition_date" placeholder="Acquisition Date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="cost">Item Cost</label>
+        <input type="number" id="cost" placeholder="Cost">
+      </div>
+
+      <div class="form-group">
+        <label for="origin">Origin</label>
+        <input type="text" id="origin" placeholder="Origin">
+      </div>
+
+      <div class="form-group">
+        <label for="documents">Upload Documents</label>
+        <input type="file" id="documents" name="documents" multiple
+          accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+      </div>
+      <div class="form-group">
+        <label for="brand">Item Brand</label>
+        <input type="text" id="brand" placeholder="Brand">
+      </div>
+      <div class="form-group">
+        <label for="model">Item Model</label>
+        <input type="text" id="model" placeholder="Model">
+      </div>
+      <div class="form-group">
+        <label for="photos">Upload Photos</label>
+        <input type="file" id="photos" name="photos" multiple accept="image/*">
+      </div>
+      <div class="form-group">
+        <label for="type">Collection Type</label>
+        <select id="type">
+          <option value="private">Private</option>
+          <option value="public">Public</option>
+        </select>
+      </div>
       <button type="submit">Add Item</button>
     </form>
     <div id="formMessage" class="form-message" style="color: red; margin-top: 10px;"></div>
@@ -128,8 +161,8 @@
       const formData = new FormData();
       formData.append('name', document.getElementById('name').value.trim());
       formData.append('description', document.getElementById('description').value.trim());
-/*       formData.append('acquisition_date', document.getElementById('acquisition_date').value);
- */
+      /*       formData.append('acquisition_date', document.getElementById('acquisition_date').value);
+       */
       const rawDate = document.getElementById('acquisition_date').value;
       const formattedDate = new Date(rawDate).toISOString().split('T').shift();
       formData.append('acquisition_date', formattedDate);
