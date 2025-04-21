@@ -195,11 +195,14 @@
         messageDiv.style.color = 'green';
         document.getElementById('addItemForm').reset();
         setTimeout(() => {
-          window.location.href = '/';
-        }, 1000);
+          window.location.href = '/index';
+        }, 200000);
       } else {
         messageDiv.textContent = '❌ Failed to add item.';
         messageDiv.style.color = 'red';
+      }
+      for (const value of formData.values()) {
+        console.log(value);
       }
     }
 
