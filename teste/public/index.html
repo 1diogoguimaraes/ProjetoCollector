@@ -25,7 +25,9 @@
 
   <!-- Header Nav -->
   <header class="site-header">
-    <div class="logo">MyApp</div>
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
     <nav class="nav-menu">
       <a href="/">Home</a>
       <a href="/index" id="searchTab" class="active">Items</a>
@@ -35,7 +37,7 @@
     </nav>
     <div class="user-profile">
       <div class="profile-dropdown">
-        <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
         <div class="dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
           <a href="#">Profile</a><!-- /profile -->
@@ -69,6 +71,7 @@
 
     <!-- Search Section -->
     <div id="searchSection" class="section active">
+      <div style="text-align: center;">
       <select id="searchField">
         <option value="name">Name</option>
         <option value="description">Description</option>
@@ -76,9 +79,9 @@
         <option value="model">Model</option>
         <option value="origin">Origin</option>
       </select>
-      <input type="text" id="search" placeholder="Search Collection">
+      <input class="search-input" type="text" id="search" placeholder="Search Collection">
       <button onclick="fetchItems()">Search</button>
-
+</div>
       <table id="itemTable" border="1" cellpadding="8" cellspacing="0">
         <thead>
           <tr>
@@ -98,6 +101,7 @@
         <tbody id="itemList"></tbody>
       </table>
     </div>
+
 
     <!-- Add Item Section -->
     <div id="addItemSection" class="section">
@@ -240,6 +244,9 @@
         if (index === -1) return [str, '']; // No delimiter found
         return [str.slice(0, index), str.slice(index + delimiter.length)];
       }
+
+      //////////////////////////////////////////////
+      // DROPDOWN IMAGE PROFILE
       // Logout
       const profileImg = document.getElementById('profileImg');
       const profileDropdown = document.getElementById('profileDropdown');
@@ -283,7 +290,7 @@
           logoutModal.style.display = 'none'; // Close the modal if clicked outside
         }
       });
-
+      ////////////////////////////////////////////
 
       // Tab Switching
 
@@ -320,6 +327,7 @@
         const items = await response.json();
         const itemList = document.getElementById('itemList');
         itemList.innerHTML = '';
+
 
         items.forEach(item => {
           const row = document.createElement('tr');
@@ -675,6 +683,20 @@
           document.getElementById('usernameDisplay').innerText = `${data.username}`;
         }
       }
+      async function loadUserData() {
+      try {
+        const response = await fetch('/user/profile-data');
+        const data = await response.json();
+        if (data.username) {
+          console.log(data)
+          const profileImageUrl = data.profile_image
+          document.getElementById('profileImg').src= profileImageUrl;
+
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
 
       document.getElementById('addItemForm').addEventListener('submit', addItem);
       document.getElementById('search').addEventListener('input', fetchItems);
@@ -682,6 +704,7 @@
 
       // Initialize
       loadUserInfo();
+      loadUserData();
       fetchItems();
     </script>
 

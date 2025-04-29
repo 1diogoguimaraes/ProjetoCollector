@@ -20,7 +20,9 @@
     </div>
   </div>
   <header class="site-header">
-    <div class="logo">MyApp</div>
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
     <nav class="nav-menu">
       <a href="/">Home</a>
       <a href="/index" id="searchTab">Items</a>
@@ -31,7 +33,7 @@
     <div class="user-profile">
 
       <div class="profile-dropdown">
-        <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
         <div class="dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
           <a href="#">Profile</a><!-- /profile -->
@@ -154,6 +156,20 @@
         document.getElementById('usernameDisplay').innerText = `${data.username}`;
       }
     }
+    async function loadUserData() {
+      try {
+        const response = await fetch('/user/profile-data');
+        const data = await response.json();
+        if (data.username) {
+          console.log(data)
+          const profileImageUrl = data.profile_image
+          document.getElementById('profileImg').src= profileImageUrl;
+
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
 
     async function addItem(event) {
       event.preventDefault();
@@ -211,6 +227,7 @@
 
     document.getElementById('addItemForm').addEventListener('submit', addItem);
     loadUserInfo();
+    loadUserData();
   </script>
 </body>
 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Profile | MyApp</title>
+  <link rel="stylesheet" href="/public/style.css" />
+</head>
+<body>
+  <div class="container edit-profile-container">
+    <h1>Edit Your Profile</h1>
+    <form id="editProfileForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="email">New Email</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="profileImage">Profile Picture</label>
+        <input type="file" id="profileImage" name="profileImage" accept="image/*" />
+      </div>
+
+      <button type="submit" class="btn-save">Save Changes</button>
+    </form>
+    <a href="/profile" class="btn-back">Cancel</a>
+  </div>
+
+  <script>
+    // Load current user data
+    async function loadCurrentProfile() {
+      const res = await fetch('/user/profile-data');
+      const data = await res.json();
+      document.getElementById('email').value = data.email;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCurrentProfile);
+
+    // Handle form submission
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const response = await fetch('/user/update-profile', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('Profile updated!');
+        window.location.href = '/profile';
+      } else {
+        alert('Failed to update profile.');
+      }
+    });
+  </script>
+</body>
+</html>

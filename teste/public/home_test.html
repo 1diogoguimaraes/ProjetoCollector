@@ -14,15 +14,14 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f2027;
-            /* fallback if image fails */
-            color: #e4f0ff;
+            background-color: #f4f4f4;
+            color: #333;
         }
-
+    
         .home-hero {
             height: 100vh;
             width: 100vw;
-            background: url('/public/images/home-bg.png') no-repeat center center;
+            background: url('/public/images/home-bg-light.png') no-repeat center center;
             background-size: cover;
             display: flex;
             flex-direction: column;
@@ -31,35 +30,34 @@
             position: relative;
             text-align: center;
         }
-
+    
         .home-hero::before {
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(15, 32, 39, 0.6);
-            /* darkened overlay for contrast */
+            background: rgba(255, 255, 255, 0.55); /* soft white overlay */
             z-index: 1;
         }
-
+    
         .home-hero-content {
             position: relative;
             z-index: 2;
             padding: 0 20px;
         }
-
+    
         .home-hero h1 {
             font-size: 3rem;
             margin-bottom: 1rem;
-            color: #ffffff;
+            color: #222;
         }
-
+    
         .home-hero p {
             font-size: 1.25rem;
             max-width: 600px;
             margin: 0 auto;
-            color: #d3eafd;
+            color: #555;
         }
-
+    
         header.site-header {
             position: absolute;
             top: 0;
@@ -69,61 +67,63 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(10, 25, 35, 0.85);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.919);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             z-index: 3;
         }
-
+    
         .logo {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #78d6ff;
+            color: #2a2a2a;
         }
-
+    
         .nav-menu {
             display: flex;
             gap: 20px;
         }
-
+    
         .nav-menu a {
             text-decoration: none;
-            font-size: 1rem;
-            color: #d6eaf8;
+            font-size: 1.5rem;
+            color: #333;
             transition: color 0.2s ease;
         }
-        .btn-cta {
-            text-decoration: none;
-    background-color: #1e90ff;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
+    
         .nav-menu a:hover,
         .nav-menu a.active {
-            color: #5ecbf1;
+            color: #007bff;
         }
-
+    
+        .btn-cta {
+            text-decoration: none;
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+    
         .user-profile {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-
+    
         .profile-img {
             width: 40px;
             height: 40px;
             cursor: pointer;
             border-radius: 50%;
-            border: 2px solid #78d6ff;
+            border: 2px solid #007bff;
         }
-
+    
         .dropdown-menu {
             display: none;
-            /* enable with JS if needed */
         }
     </style>
+    
 </head>
 
 <body>
@@ -144,7 +144,7 @@
 
             <span id="usernameDisplay"></span>
             <div class="profile-dropdown">
-                <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+                <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
                 <div class="dropdown-menu" id="profileDropdown">
                     <a href="#">Profile</a>
                     <a href="#">Settings</a>

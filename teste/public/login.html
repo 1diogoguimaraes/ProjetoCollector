@@ -13,13 +13,16 @@
 
   <!-- Header Nav -->
   <header class="site-header">
-    <div class="logo">MyApp</div>
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
     <nav class="nav-menu">
       <a href="/">Home</a>
-      <a href="/login">Login</a>
     </nav>
 
-      <div></div>
+      <nav class="nav-menu">
+        <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
+    </nav>
 
    
   </header>
@@ -33,6 +36,8 @@
       <button type="submit">Login</button>
     </form>
     <p >Don't have an account? <a  href="/register" class="btn-user-page">Register here</a></p>
+    <p><a href="/forgot-password" class="btn-user-page">Forgot Password?</a></p>
+
   </div>
 
   <script>

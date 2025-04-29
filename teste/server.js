@@ -4,6 +4,11 @@ const bcrypt = require('bcrypt');
 const mysql = require('mysql');
 const session = require('express-session');
 const path = require('path');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+
+require('dotenv').config();
 
 
 const app = express();
@@ -23,8 +28,19 @@ db.connect((err) => {
     console.log('Connected to MySQL');
 });
 
+// Create a transporter using your email credentials
+const transporter = nodemailer.createTransport({
+    host: 'smtp.ethereal.email',
+    port: 587,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
 const multer = require('multer');
 const fs = require('fs');
+const { profile } = require('console');
 
 // Store uploads in public/uploads
 const storage = multer.diskStorage({
@@ -57,6 +73,29 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+
+////////////////////PROFILE IMAGE MULTER////////////////
+
+const profileImageStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, 'public', 'images', 'profile_image');
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+        const uniqueName = Date.now() + '___' + decodedOriginalName;
+        cb(null, uniqueName);
+    }
+});
+
+const profileUpload = multer({ storage: profileImageStorage });
+
+
+///////////////
+
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 
@@ -75,16 +114,122 @@ app.use(session({
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
+
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'forgot_password.html'));
+});
+// Serve the reset password page
+app.get('/reset-password/:token', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'reset_password.html'));
+});
+
+
 app.get('/home', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
 
+
+
+// Forgot Password (store token in DB)
+app.post('/forgot-password', (req, res) => {
+    const { value } = req.body;
+
+    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [value, value], (err, results) => {
+        if (err) return res.status(500).send('Server error');
+        if (results.length === 0) return res.status(404).send('User not found');
+
+        const user = results[0];
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000); // 1 hour
+
+        db.query(
+            'INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, ?)',
+            [user.username, token, expiresAt],
+            (err) => {
+                if (err) return res.status(500).send('Server error');
+
+                const resetLink = `http://localhost:3000/reset-password/${token}`;
+                const mailOptions = {
+                    from: 'your-email@gmail.com',
+                    to: user.email,
+                    subject: 'Password Reset Link',
+                    html: `<p>Click <a href="${resetLink}">here</a> to reset your password</p>`
+                };
+
+                transporter.sendMail(mailOptions, (error, info) => {
+                    if (error) {
+                        console.error('Error sending email:', error);
+                        return res.status(500).send('Error sending email');
+                    }
+                    console.log('Email sent: ' + info.response);
+                    res.send('Password reset link has been sent to your email');
+                });
+
+            }
+        );
+    });
+});
+
+//validate link
+app.get('/reset-password/:token/validate', (req, res) => {
+    const { token } = req.params;
+
+    db.query(
+        'SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()',
+        [token],
+        (err, results) => {
+            if (err || results.length === 0) {
+                return res.status(410).send('Token is invalid or expired');
+            }
+            res.send('Token is valid');
+        }
+    );
+});
+
+// Reset Password (using token from DB)
+app.post('/reset-password/:token', (req, res) => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    // Validate password before anything else
+    if (!newPassword || newPassword.length < 6) {
+        return res.status(400).send('Password must be at least 6 characters long');
+    }
+
+    db.query('SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()', [token], (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(410).send('Token expired or invalid'); // 410 Gone is semantically accurate
+        }
+
+        const username = results[0].username;
+
+        bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+            if (err) return res.status(500).send('Server error');
+
+            db.query('UPDATE users SET password = ? WHERE username = ?', [hashedPassword, username], (err) => {
+                if (err) return res.status(500).send('Error updating password');
+
+                db.query('DELETE FROM password_resets WHERE token = ?', [token]);
+                res.send('Password successfully reset');
+            });
+        });
+    });
+});
+
+
 // Register API
-app.post('/register', (req, res) => {
-    const { username, password } = req.body;
+app.post('/register', profileUpload.single('profileImage'), (req, res) => {
+    const { username, password, email } = req.body;
+
+    if (!password || password.length < 6) {
+        return res.status(400).send('Password must be at least 6 characters long');
+    }
+
+    const filePath = `/public/images/profile_image/default-avatar.png`;
+
 
     // Check if the username already exists
-    db.query('SELECT * FROM users WHERE username = ?', [username], (err, results) => {
+    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (err, results) => {
         if (err) {
             return res.status(500).send('Server error');
         }
@@ -100,7 +245,7 @@ app.post('/register', (req, res) => {
             }
 
             // Insert new user into the database
-            db.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err, result) => {
+            db.query('INSERT INTO users (username, password, email,profile_image_url) VALUES (?, ?, ?, ?)', [username, hashedPassword, email, filePath], (err, result) => {
                 if (err) {
                     return res.status(500).send('Error registering user');
                 }
@@ -132,6 +277,22 @@ app.get('/forum', isLoggedIn, (req, res) => res.sendFile(path.join(__dirname, 'p
 app.get('/index', isLoggedIn, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.get('/profile', isLoggedIn, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+app.get('/edit-profile', isLoggedIn, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'edit-profile.html'));
+});
+
+app.get('/index2', isLoggedIn, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index2.html'));
+});
+
+app.get('/index3', isLoggedIn, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index3.html'));
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'home.html'));
 });
@@ -201,6 +362,34 @@ function isLoggedIn(req, res, next) {
 
 // Routes for managing collection items
 app.use('/items', isLoggedIn);
+
+
+app.get('/user/profile-data', isLoggedIn, (req, res) => {
+    const userId = req.session.userId;
+
+    const userQuery = 'SELECT username, email,profile_image_url FROM users WHERE id = ?';
+    const itemCountQuery = 'SELECT COUNT(*) as itemCount FROM items WHERE user_id = ?';
+
+    db.query(userQuery, [userId], (err, userResults) => {
+        if (err) return res.status(500).send('Error fetching user data');
+
+        const user = userResults[0];
+
+        db.query(itemCountQuery, [userId], (err, itemResults) => {
+            if (err) return res.status(500).send('Error fetching item count');
+
+            const itemCount = itemResults[0].itemCount;
+
+            res.json({
+                username: user.username,
+                email: user.email,
+                itemCount,
+                profile_image: user.profile_image_url
+            });
+        });
+    });
+});
+
 
 // Create item
 app.post('/items', isLoggedIn, upload.fields([
@@ -339,7 +528,7 @@ app.get('/items/:id', isLoggedIn, (req, res) => {
 
 
 // Update an item
-// Update an item
+
 app.put('/items/:id', isLoggedIn, upload.fields([
     { name: 'photos', maxCount: 10 },
     { name: 'documents', maxCount: 10 }

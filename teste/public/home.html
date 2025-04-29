@@ -6,65 +6,155 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Home | MyApp</title>
     <link rel="stylesheet" href="/public/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+
 
 </head>
 
 <body>
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+          <p>Are you sure you want to logout?</p>
+          <div class="modal-buttons">
+            <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
+            <button id="cancelLogout" class="btn-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
 
     <header class="site-header">
-        <div class="logo">MyApp</div>
+      <a href="/" class="logo">
+        <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+      </a>
+      
         <nav class="nav-menu">
             <a href="/" class="active">Home</a>
             <a href="/index" id="searchTab">Items</a>
             <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
             <a href="/forum">Forum</a>
         </nav>
-
-            <a href="/login" class="btn-cta" id="loginBtn" style="display: none;">Login</a>
+<button onclick="location.href='/login'" id="loginBtn" style="display: none;">Login</button>
 
 
         <div class="user-profile" id="userProfile" style="display: none;">
 
             <div class="profile-dropdown">
-                <img src="/public/images/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+                <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
                 <div class="dropdown-menu" id="profileDropdown">
                     <div id="usernameDisplay" class="dropdown-username"></div>
-                    <a href="#">Profile</a>
+                    <a href="/profile">Profile</a>
                     <a href="#">Settings</a>
                     <a href="#" id="logoutBtnDropdown">Logout</a>
                 </div>
             </div>
         </div>
     </header>
-
-    <div class="container">
+    
+<div class="container">
         <div class="home-hero-content">
-            <h1>Welcome to MyApp</h1>
-            <p>Your go-to platform for discovery, collaboration, and community connection.</p>
+            <h1 >Welcome to MyApp</h1>
+            <p style="text-align: center;">Your go-to platform for discovery, collaboration, and community connection.</p>
         </div>
+</div>
 
-    </div>
 
 
-    <script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch user information to determine login status
         fetch('/user')
-          .then(res => res.json())
-          .then(data => {
-            if (data.username) {
-                console.log(data.username)
-              document.getElementById('usernameDisplay').textContent = data.username;
-              document.getElementById('userProfile').style.display = 'flex';
-            } else {
-                console.log(data.username)
-              document.getElementById('loginBtn').style.display = 'flex';
-            }
-          })
-          .catch(err => {
-            console.error('Error checking user login status:', err);
-            // Fallback: Show login button just in case
-            document.getElementById('loginBtn').style.display = 'flex';
-          });
-      </script>
+            .then(res => res.json())
+            .then(data => {
+                if (data.username) {
+                    // User is logged in
+                    console.log("Logged in as:", data.username);
+                    document.getElementById('usernameDisplay').textContent = data.username;
+                    document.getElementById('userProfile').style.display = 'flex';
+                } else {
+                    // User is not logged in
+                    console.log("No user found");
+                    document.getElementById('loginBtn').style.display = 'flex';
+                }
+            })
+            .catch(err => {
+                // Error fetching user data - show login button as fallback
+                console.error('Error checking user login status:', err);
+                document.getElementById('loginBtn').style.display = 'flex';
+            });
+    });
+
+    //////////////////////////////////////////////
+      // DROPDOWN IMAGE PROFILE
+      // Logout
+      const profileImg = document.getElementById('profileImg');
+      const profileDropdown = document.getElementById('profileDropdown');
+
+      profileImg.addEventListener('click', () => {
+        profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+      });
+
+      // Hide dropdown when clicking outside
+      document.addEventListener('click', (event) => {
+        if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
+          profileDropdown.style.display = 'none';
+        }
+      });
+
+      // Hook logout from dropdown
+      document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
+        e.preventDefault(); // Prevent default action of the link
+
+        // Show the custom modal
+        const logoutModal = document.getElementById('logoutModal');
+        logoutModal.style.display = 'flex';
+      });
+
+      // Handle confirm logout
+      document.getElementById('confirmLogout').addEventListener('click', async () => {
+        await fetch('/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
+
+      // Handle cancel logout
+      document.getElementById('cancelLogout').addEventListener('click', () => {
+        const logoutModal = document.getElementById('logoutModal');
+        logoutModal.style.display = 'none'; // Close the modal
+      });
+
+      // Close the modal if the user clicks outside of it
+      window.addEventListener('click', (event) => {
+        const logoutModal = document.getElementById('logoutModal');
+        if (event.target === logoutModal) {
+          logoutModal.style.display = 'none'; // Close the modal if clicked outside
+        }
+      });
+      ////////////////////////////////////////////
+      async function loadUserInfo() {
+      const response = await fetch('/user');
+      const data = await response.json();
+      if (data.username) {
+        document.getElementById('usernameDisplay').innerText = `${data.username}`;
+      }
+    }
+    async function loadUserData() {
+      try {
+        const response = await fetch('/user/profile-data');
+        const data = await response.json();
+        if (data.username) {
+          console.log(data)
+          const profileImageUrl = data.profile_image
+          document.getElementById('profileImg').src= profileImageUrl;
+
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
+
+    loadUserInfo();
+    loadUserData();
+</script>
+
       
 
 </body>

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register</title>
   <link rel="stylesheet" href="/public/style.css" />
 </head>
@@ -13,14 +14,16 @@
 
   <!-- Header Nav -->
   <header class="site-header">
-    <div class="logo">MyApp</div>
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
     <nav class="nav-menu">
-<!--       <a href="#">Home</a>
+      <!--       <a href="#">Home</a>
       <a href="/login">Login</a> -->
     </nav>
     <nav class="nav-menu">
-      <a href="/login" class="btn-cta">Login</a>
-    </nav>  
+      <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
+    </nav>
   </header>
 
   <!-- Register Form -->
@@ -30,9 +33,11 @@
       <input type="text" id="username" placeholder="Username" required>
       <input type="password" id="password" placeholder="Password" required>
       <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+      <input type="text" id="email" placeholder="Email" required>
+
       <button type="submit">Register</button>
     </form>
-    <p>Already have an account? <a href="/login"class="btn-user-page">Login here</a></p>
+    <p>Already have an account? <a href="/login" class="btn-user-page">Login here</a></p>
   </div>
 
   <!-- Script -->
@@ -42,6 +47,12 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
+      const email = document.getElementById('email').value;
+
+      if (password.length < 6) {
+        alert("Password must be at least 6 characters long");
+        return;
+      }
 
       if (password !== confirmPassword) {
         alert("Passwords do not match.");
@@ -51,7 +62,7 @@
       const response = await fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, email })
       });
 
       if (response.ok) {
@@ -67,4 +78,5 @@
   </script>
 
 </body>
+
 </html>

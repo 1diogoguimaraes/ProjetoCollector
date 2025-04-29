@@ -15,8 +15,8 @@ ${ITEMS_NUMBER}    100
 ${ADD_ITEM_TAB}    addItemTab
 ${ITEMS_TAB}    searchTab
 
-@{WORDS}           Alpha    Bravo    Charlie    Delta    Echo
-@{DESCRIPTIONS}    Em bom estado com poucas marcas de uso    Fuinciona bem mas não deve ser constantemente usado. Guardar em local escuro    Serve só para exposição    Artigo delicado, não mexer
+@{WORDS}           Mesa    Relogio    Caneca    Sapato    Carro    Máquina de Escrever    Vaso    Telefone    Rádio
+@{DESCRIPTIONS}    Em bom estado com poucas marcas de uso    Funciona bem mas não deve ser constantemente usado. Guardar em local escuro    Serve só para exposição    Artigo delicado, não mexer
 
 @{ORIGINS}    Colega    Feira Fundão    Porto    Alemanha    America    Covilhã    Amigo
 @{VALUES}           100    300    1200    54    12341    11221
@@ -52,9 +52,9 @@ Open website collector
     Open Browser    ${LOCALHOST_URL}    ${BROWSER}
     Click Element    loginBtn
     Wait Until Element Is Visible    username
-    Input Text    username    ze
-    Input Password    password    123
-    Click Button    Login
+    Input Text    username    qe
+    Input Password    password    Password.12345
+    Click Button    //form/button
 
 Change Tab
     [Arguments]    ${CHANGE_TAB}
@@ -85,18 +85,9 @@ Insert Data
     Input Text          id=origin     ${origin}
 
 
-    ${doc_files}=     List Files In Directory    ${DOC_DIR}
-    ${num_files}=     Evaluate    random.randint(1, 3)    modules=random
-    ${selected_docs}=    Create List
+    ${upload_docs}=    Evaluate    random.random() > 0.15    modules=random
+    Run Keyword If    ${upload_docs}    Upload Random Documents
 
-    FOR    ${index}    IN RANGE    ${num_files}
-        ${i}=             Evaluate    random.randint(0, len(${doc_files}) - 1)    modules=random
-        ${doc_file}=      Get From List    ${doc_files}    ${i}
-        ${doc_path}=      Join Path    ${DOC_DIR}    ${doc_file}
-        Append To List    ${selected_docs}    ${doc_path}
-    END
-    ${doc_paths}=    Catenate    SEPARATOR=\n    @{selected_docs}
-    Choose File       id=documents    ${doc_paths}
 
 
 
@@ -109,19 +100,9 @@ Insert Data
     Input Text          id=model     ${model}
 
 
-    ${photo_files}=   List Files In Directory    ${PHOTO_DIR}
-    ${num_photos}=     Evaluate    random.randint(1, 3)    modules=random
-    ${selected_photos}=    Create List
+    ${upload_photos}=    Evaluate    random.random() > 0.15    modules=random
+    Run Keyword If    ${upload_photos}    Upload Random Photos
 
-    FOR    ${index}    IN RANGE    ${num_photos}
-        ${i}=             Evaluate    random.randint(0, len(${photo_files}) - 1)    modules=random
-        ${photo_file}=    Get From List    ${photo_files}    ${i}
-        ${photo_path}=    Join Path    ${PHOTO_DIR}    ${photo_file}
-        Append To List    ${selected_photos}    ${photo_path}
-    END
-
-    ${photo_paths}=    Catenate    SEPARATOR=\n    @{selected_photos}
-    Choose File       id=photos    ${photo_paths}
 
 
 
@@ -146,3 +127,31 @@ Delete Data
             Exit For Loop
         END
     END
+
+Upload Random Documents
+    ${doc_files}=     List Files In Directory    ${DOC_DIR}
+    ${num_files}=     Evaluate    random.randint(1, 3)    modules=random
+    ${selected_docs}=    Create List
+
+    FOR    ${index}    IN RANGE    ${num_files}
+        ${i}=             Evaluate    random.randint(0, len(${doc_files}) - 1)    modules=random
+        ${doc_file}=      Get From List    ${doc_files}    ${i}
+        ${doc_path}=      Join Path    ${DOC_DIR}    ${doc_file}
+        Append To List    ${selected_docs}    ${doc_path}
+    END
+    ${doc_paths}=    Catenate    SEPARATOR=\n    @{selected_docs}
+    Choose File       id=documents    ${doc_paths}
+
+Upload Random Photos
+    ${photo_files}=     List Files In Directory    ${PHOTO_DIR}
+    ${num_photos}=      Evaluate    random.randint(1, 3)    modules=random
+    ${selected_photos}=    Create List
+
+    FOR    ${index}    IN RANGE    ${num_photos}
+        ${i}=             Evaluate    random.randint(0, len(${photo_files}) - 1)    modules=random
+        ${photo_file}=    Get From List    ${photo_files}    ${i}
+        ${photo_path}=    Join Path    ${PHOTO_DIR}    ${photo_file}
+        Append To List    ${selected_photos}    ${photo_path}
+    END
+    ${photo_paths}=    Catenate    SEPARATOR=\n    @{selected_photos}
+    Choose File       id=photos    ${photo_paths}
