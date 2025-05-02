@@ -289,6 +289,10 @@ app.get('/index2', isLoggedIn, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index2.html'));
 });
 
+app.get('/index2views', isLoggedIn, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index2views.html'));
+});
+
 app.get('/index3', isLoggedIn, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index3.html'));
 });
@@ -367,29 +371,57 @@ app.use('/items', isLoggedIn);
 app.get('/user/profile-data', isLoggedIn, (req, res) => {
     const userId = req.session.userId;
 
-    const userQuery = 'SELECT username, email,profile_image_url FROM users WHERE id = ?';
-    const itemCountQuery = 'SELECT COUNT(*) as itemCount FROM items WHERE user_id = ?';
+    const userQuery = 'SELECT username, email, profile_image_url FROM users WHERE id = ?';
+    const itemStatsQuery = 'SELECT COUNT(*) as itemCount, SUM(cost) as totalCost FROM items WHERE user_id = ?';
 
     db.query(userQuery, [userId], (err, userResults) => {
         if (err) return res.status(500).send('Error fetching user data');
 
         const user = userResults[0];
 
-        db.query(itemCountQuery, [userId], (err, itemResults) => {
-            if (err) return res.status(500).send('Error fetching item count');
+        db.query(itemStatsQuery, [userId], (err, itemResults) => {
+            if (err) return res.status(500).send('Error fetching item stats');
 
-            const itemCount = itemResults[0].itemCount;
+            const { itemCount, totalCost } = itemResults[0];
 
             res.json({
                 username: user.username,
                 email: user.email,
                 itemCount,
+                totalCost: totalCost || 0,  // default to 0 if null
                 profile_image: user.profile_image_url
             });
         });
     });
 });
 
+
+app.post('/user/update-profile', isLoggedIn, profileUpload.single('profileImage'), (req, res) => {
+    const userId = req.session.userId;
+    const newEmail = req.body.email;
+    let profileImageUrl;
+  
+    if (req.file) {
+      profileImageUrl = `/public/images/profile_image/${req.file.filename}`;
+    }
+  
+    const updateQuery = profileImageUrl
+      ? 'UPDATE users SET email = ?, profile_image_url = ? WHERE id = ?'
+      : 'UPDATE users SET email = ? WHERE id = ?';
+  
+    const queryParams = profileImageUrl
+      ? [newEmail, profileImageUrl, userId]
+      : [newEmail, userId];
+  
+    db.query(updateQuery, queryParams, (err, result) => {
+      if (err) {
+        console.error('Error updating profile:', err);
+        return res.status(500).send('Server error');
+      }
+  
+      res.status(200).send('Profile updated successfully');
+    });
+  });
 
 // Create item
 app.post('/items', isLoggedIn, upload.fields([

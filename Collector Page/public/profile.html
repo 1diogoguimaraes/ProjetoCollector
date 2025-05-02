@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Profile | MyApp</title>
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png"/>
   <link rel="stylesheet" href="/public/style.css" />
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Libre+Baskerville:wght@400;700&display=swap"
@@ -40,8 +41,8 @@
         <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg"/>
         <div class="dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="#">Profile</a><!-- /profile -->
-          <a href="#">Settings</a><!-- /settings -->
+          <a href="/profile">Profile</a>
+          <a href="#">Settings</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
@@ -55,12 +56,14 @@
         <p><strong>Username:</strong> <span id="profileDisplay">Loading...</span></p>
         <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
         <p><strong>Total Items:</strong> <span id="itemCountDisplay">Loading...</span></p>
-
+        <p><strong>Total Items Cost:</strong> <span id="itemCostDisplay">Loading...</span></p>
         <!-- Add more fields as needed -->
       </div>
       <button class="btn-edit" id="editProfileBtn">Edit Profile</button>
     </div>
   </div>
+
+  <script src="public/js/utils.js"></script>
 
   <script>
     async function loadUserInfo() {
@@ -79,6 +82,7 @@
           document.getElementById('profileDisplay').innerText = data.username;
           document.getElementById('profileEmail').innerText = data.email;
           document.getElementById('itemCountDisplay').innerText = data.itemCount;
+          document.getElementById('itemCostDisplay').innerText = data.totalCost;
 
           const profileImageUrl = data.profile_image
           document.getElementById('profilePic').src= profileImageUrl;
@@ -89,52 +93,7 @@
         console.error('Failed to load user data:', err);
       }
     }
-    //////////////////////////////////////////////
-    // DROPDOWN IMAGE PROFILE
-    // Logout
-    const profileImg = document.getElementById('profileImg');
-    const profileDropdown = document.getElementById('profileDropdown');
 
-    profileImg.addEventListener('click', () => {
-      profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
-    });
-
-    // Hide dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
-        profileDropdown.style.display = 'none';
-      }
-    });
-
-    // Hook logout from dropdown
-    document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
-      e.preventDefault(); // Prevent default action of the link
-
-      // Show the custom modal
-      const logoutModal = document.getElementById('logoutModal');
-      logoutModal.style.display = 'flex';
-    });
-
-    // Handle confirm logout
-    document.getElementById('confirmLogout').addEventListener('click', async () => {
-      await fetch('/logout', { method: 'POST' });
-      window.location.href = '/login';
-    });
-
-    // Handle cancel logout
-    document.getElementById('cancelLogout').addEventListener('click', () => {
-      const logoutModal = document.getElementById('logoutModal');
-      logoutModal.style.display = 'none'; // Close the modal
-    });
-
-    // Close the modal if the user clicks outside of it
-    window.addEventListener('click', (event) => {
-      const logoutModal = document.getElementById('logoutModal');
-      if (event.target === logoutModal) {
-        logoutModal.style.display = 'none'; // Close the modal if clicked outside
-      }
-    });
-    ////////////////////////////////////////////
 
     document.getElementById('editProfileBtn').addEventListener('click', () => {
       window.location.href = '/edit-profile';

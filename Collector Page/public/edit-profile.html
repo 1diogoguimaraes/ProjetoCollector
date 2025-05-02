@@ -3,10 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Edit Profile | MyApp</title>
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png"/>
   <link rel="stylesheet" href="/public/style.css" />
 </head>
 <body>
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+    <nav class="nav-menu">
+      <a href="/" class="active">Home</a>
+      <a href="/index" id="searchTab">Items</a>
+      <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+      <a href="/forum">Forum</a>
+    </nav>
+
+    <a href="/login" class="btn-cta" id="loginBtn" style="display: none;">Login</a>
+
+
+    <div class="user-profile">
+      <div class="profile-dropdown">
+        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg"/>
+        <div class="dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
+          <a href="/profile">Profile</a>
+          <a href="#">Settings</a>
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+  </header>
   <div class="container edit-profile-container">
     <h1>Edit Your Profile</h1>
     <form id="editProfileForm" enctype="multipart/form-data">
@@ -24,6 +50,8 @@
     </form>
     <a href="/profile" class="btn-back">Cancel</a>
   </div>
+
+  <script src="public/js/utils.js"></script>
 
   <script>
     // Load current user data

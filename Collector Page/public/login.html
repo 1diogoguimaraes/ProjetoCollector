@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
-  <link rel="stylesheet" href="/public/style.css"/>
+  <link rel="stylesheet" href="/public/style.css" />
 </head>
+
 <body>
 
   <!-- Top Banner -->
@@ -20,22 +22,27 @@
       <a href="/">Home</a>
     </nav>
 
-      <nav class="nav-menu">
-        <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
+    <nav class="nav-menu">
+      <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
     </nav>
 
-   
+
   </header>
 
   <!-- Login Form -->
   <div class="login-form">
     <h1>Login</h1>
     <form id="loginForm">
+      <div class="user-container">
       <input type="text" id="username" placeholder="Username" required />
-      <input type="password" id="password" placeholder="Password" required />
+    </div>
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Password" required />
+        <span id="togglePassword" class="toggle-password" >☐</span> <!-- Eye icon -->
+      </div>
       <button type="submit">Login</button>
     </form>
-    <p >Don't have an account? <a  href="/register" class="btn-user-page">Register here</a></p>
+    <p>Don't have an account? <a href="/register" class="btn-user-page">Register here</a></p>
     <p><a href="/forgot-password" class="btn-user-page">Forgot Password?</a></p>
 
   </div>
@@ -59,8 +66,19 @@
       }
     }
 
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    togglePassword.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      togglePassword.textContent = type === 'password' ? '☐' : '☑'; // Optional: swap icons
+    });
+
     document.getElementById('loginForm').addEventListener('submit', login);
+
   </script>
 
 </body>
+
 </html>

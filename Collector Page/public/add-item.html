@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png"/>
   <link rel="stylesheet" href="/public/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
@@ -36,8 +37,8 @@
         <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
         <div class="dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="#">Profile</a><!-- /profile -->
-          <a href="#">Settings</a><!-- /settings -->
+          <a href="/profile">Profile</a>
+          <a href="#">Settings</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
@@ -64,7 +65,7 @@
 
       <div class="form-group">
         <label for="cost">Item Cost</label>
-        <input type="number" id="cost" placeholder="Cost">
+        <input type="number" id="cost" placeholder="Cost " step="0.01" min="0">
       </div>
 
       <div class="form-group">
@@ -102,49 +103,10 @@
 
   </div>
 
+  <script src="public/js/utils.js"></script>
+
   <script>
-    // Logout
-    const profileImg = document.getElementById('profileImg');
-    const profileDropdown = document.getElementById('profileDropdown');
-
-    profileImg.addEventListener('click', () => {
-      profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
-    });
-
-    // Hide dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      if (!profileImg.contains(event.target) && !profileDropdown.contains(event.target)) {
-        profileDropdown.style.display = 'none';
-      }
-    });
-
-    // Hook logout from dropdown
-    document.getElementById('logoutBtnDropdown').addEventListener('click', (e) => {
-      e.preventDefault(); // Prevent default action of the link
-
-      // Show the custom modal
-      const logoutModal = document.getElementById('logoutModal');
-      logoutModal.style.display = 'flex';
-    });
-    // Handle confirm logout
-    document.getElementById('confirmLogout').addEventListener('click', async () => {
-      await fetch('/logout', { method: 'POST' });
-      window.location.href = '/login';
-    });
-
-    // Handle cancel logout
-    document.getElementById('cancelLogout').addEventListener('click', () => {
-      const logoutModal = document.getElementById('logoutModal');
-      logoutModal.style.display = 'none'; // Close the modal
-    });
-
-    // Close the modal if the user clicks outside of it
-    window.addEventListener('click', (event) => {
-      const logoutModal = document.getElementById('logoutModal');
-      if (event.target === logoutModal) {
-        logoutModal.style.display = 'none'; // Close the modal if clicked outside
-      }
-    });
+    
 
 
 
@@ -212,7 +174,7 @@
         document.getElementById('addItemForm').reset();
         setTimeout(() => {
           window.location.href = '/index';
-        }, 200000);
+        }, 2000);
       } else {
         messageDiv.textContent = '❌ Failed to add item.';
         messageDiv.style.color = 'red';
