@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Collection</title>
-    <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png"/>
+    <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
     <link rel="stylesheet" href="/public/style.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
@@ -27,18 +27,25 @@
     <header class="site-header">
         <a href="/" class="logo">
             <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
-          </a>
-        <nav class="nav-menu">
-            <a href="/" >Home</a>
-            <a href="/index" id="searchTab" >Items</a>
-            <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
-            <a href="/forum" class="active">Forum</a>
+        </a>
 
-        </nav>
+        <div>
+            <button id="menuToggleBtn">Menu</button>
+
+            <nav class="nav-menu">
+                <a href="/">Home</a>
+                <a href="/index" id="searchTab">Items</a>
+                <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+                <a href="/forum" class="active">Forum</a>
+
+            </nav>
+        </div>
+
         <div class="user-profile">
             <div class="profile-dropdown">
-                <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
-                <div class="dropdown-menu" id="profileDropdown">
+                <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img"
+                    id="profileImg" />
+                <div class="profile-dropdown-menu" id="profileDropdown">
                     <div id="usernameDisplay" class="dropdown-username"></div>
                     <a href="/profile">Profile</a>
                     <a href="#">Settings</a>
@@ -114,7 +121,7 @@
     <script src="public/js/utils.js"></script>
 
     <script>
-       
+
 
         async function loadUserInfo() {
             const response = await fetch('/user');
@@ -222,31 +229,31 @@
             }
         });
 
-        
+
 
         document.getElementById('search').addEventListener('input', fetchItems);
         document.getElementById('searchField').addEventListener('change', fetchItems);
         async function loadUserInfo() {
-        const response = await fetch('/user');
-        const data = await response.json();
-        if (data.username) {
-          document.getElementById('usernameDisplay').innerText = `${data.username}`;
+            const response = await fetch('/user');
+            const data = await response.json();
+            if (data.username) {
+                document.getElementById('usernameDisplay').innerText = `${data.username}`;
+            }
         }
-      }
-      async function loadUserData() {
-      try {
-        const response = await fetch('/user/profile-data');
-        const data = await response.json();
-        if (data.username) {
-          console.log(data)
-          const profileImageUrl = data.profile_image
-          document.getElementById('profileImg').src= profileImageUrl;
+        async function loadUserData() {
+            try {
+                const response = await fetch('/user/profile-data');
+                const data = await response.json();
+                if (data.username) {
+                    console.log(data)
+                    const profileImageUrl = data.profile_image
+                    document.getElementById('profileImg').src = profileImageUrl;
 
+                }
+            } catch (err) {
+                console.error('Failed to load user data:', err);
+            }
         }
-      } catch (err) {
-        console.error('Failed to load user data:', err);
-      }
-    }
 
 
         loadUserInfo();

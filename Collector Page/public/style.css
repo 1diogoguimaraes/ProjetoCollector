@@ -429,10 +429,40 @@ td button:nth-child(1):hover {
   background-color: #f1f3f5;
 }
 
+
+.profile-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 44px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.profile-dropdown-menu a {
+  display: block;
+  padding: 10px 15px;
+  color: #2d3748;
+  text-decoration: none;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.profile-dropdown-menu a:hover {
+  background-color: #f1f3f5;
+}
+
 .nav-menu {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+#menuToggleBtn {
+display: none;
 }
 
 .nav-menu a {
@@ -483,7 +513,7 @@ td button:nth-child(1):hover {
 }
 
 .modal-content {
-
+margin-top: 80px;
   background-color: white;
   padding: 2rem;
   border-radius: 12px;
@@ -492,6 +522,11 @@ td button:nth-child(1):hover {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 
 }
+.modal-content > div {
+  box-sizing: border-box;
+  width: 100%;
+}
+
 
 .modal-scroll {
   max-height: 65vh;
@@ -798,6 +833,7 @@ td button:nth-child(1):hover {
   scroll-behavior: smooth;
 }
 
+
 @media (max-width: 768px) {
   #modalDetails>div {
     flex-direction: column !important;
@@ -806,6 +842,14 @@ td button:nth-child(1):hover {
 
 /* ===== Mobile-Responsive Enhancements ===== */
 @media (max-width: 768px) {
+  /* HEADER */
+  .logo-img{
+    height: 32px;
+  }
+  .profile-img{
+    width: 32px;
+    height: 32px;
+  }
   /* Layout */
   .container {
     padding: 15px;
@@ -843,9 +887,17 @@ td button:nth-child(1):hover {
   }
 
   .nav-menu {
+    display: none;
     flex-direction: column;
     gap: 10px;
     width: 100%;
+  }
+  .nav-menu.show {
+    margin-top: 10px;
+    display: flex;
+  }
+  #menuToggleBtn {
+display: block;
   }
 
   .user-profile {

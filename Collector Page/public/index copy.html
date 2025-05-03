@@ -32,17 +32,13 @@
     <a href="/" class="logo">
       <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
     </a>
-    <div>
-       <button id="menuToggleBtn">Menu</button>
+    <nav class="nav-menu">
+      <a href="/">Home</a>
+      <a href="/index" id="searchTab" class="active">Items</a>
+      <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+      <a href="/forum">Forum</a>
 
-      <nav class="nav-menu">
-        <a href="/">Home</a>
-        <a href="/index" id="searchTab" class="active">Items</a>
-        <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
-        <a href="/forum">Forum</a>
-
-      </nav>
-    </div>
+    </nav>
     <div class="user-profile">
       <div class="profile-dropdown">
         <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
@@ -75,8 +71,6 @@
           <option value="brand">Brand</option>
           <option value="model">Model</option>
           <option value="origin">Origin</option>
-          <option value="item_code">ID</option>
-
         </select>
         <button onclick="startQrScanner()">Search QR</button>
         <div id="qr-reader" style="width: 300px;"></div>
@@ -125,7 +119,7 @@
       <div id="paginationControls" style="text-align: center;">
         <button onclick="prevPage()">Previous</button>
         <span id="pageInfo">Page 1</span>
-        <a href="/index#"><button onclick="nextPage()">Next</button></a>
+        <a href="/index2views#"><button onclick="nextPage()">Next</button></a>
       </div>
     </div>
 
@@ -256,8 +250,7 @@
     <!-- Item modal -->
     <div id="itemModal" class="modal" style="display:none;">
       <div class="modal-content">
-        <span class="close-button" onclick="closeModal()"
-          style="cursor: pointer; text-align: right; display: block;">✖️</span>
+        <span class="close-button" onclick="closeModal()" style="cursor: pointer; text-align: right; display: block;">✖️</span>
         <div id="modalDetails"></div>
       </div>
     </div>
@@ -276,25 +269,14 @@
           },
           (decodedText) => {
             qrScanner.stop();
-
-            // Extract ID from the decoded URL
-            const url = new URL(decodedText);
-            const searchId = url.searchParams.get("search");
-            const field = url.searchParams.get("field");
-
-            // Set the search input and field
-            document.getElementById('search').value = searchId;
-            document.getElementById('searchField').value = field;
-            console.log(decodedText)
-            // Trigger the search
-            fetchItems();
+/*       window.location.href = decodedText; // navigate to item
+ */      console.log(decodedText)
           },
           (err) => {
             console.warn(`QR error: ${err}`);
           }
         );
       }
-
 
       //////////////////////////////////////////////////
 
@@ -449,6 +431,31 @@
 
       <div class="card-content">
         <h3>${item.name}</h3>
+        <p>${item.description}</p>
+        <p><strong>Date:</strong> ${item.acquisition_date?.split('T')[0] || 'N/A'}</p>
+        <p><strong>Cost:</strong> ${item.cost || 'N/A'}</p>
+        <p><strong>Origin:</strong> ${item.origin || 'N/A'}</p>
+        <div><strong>Documents:</strong> ${documentLinks}</div>
+        <p><strong>Brand:</strong> ${item.brand || 'N/A'}</p>
+        <p><strong>Model:</strong> ${item.model || 'N/A'}</p>
+        <div><strong>Links:</strong> ${item.links && item.links.length
+                ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank">${link}</a>`).join('<br>')
+                : 'No links'
+              }</div>
+        <p><strong>Type:</strong> ${item.type || 'private'}</p>
+        <div class="card-actions-dropdown">
+  <button class="settings-btn" onclick="toggleDropdown(this)">
+    <i class="fas fa-cog"></i>
+  </button>
+  <div class="dropdown-menu">
+    <button onclick="editItem(${item.id})">✏️ Edit</button>
+    <button onclick="deleteItem(${item.id})">❌ Delete</button>
+    <a href="/items/${item.id}/qrcode" download="item-${item.id}-qrcode.png">
+  <button title="Download QR Code"><i class="fas fa-qrcode"></i> QR</button>
+</a>
+
+  </div>
+</div>
       </div>
     `;
 
@@ -526,33 +533,33 @@
         }
       }
       function showItemModal(item) {
-        const modal = document.getElementById('itemModal');
-        const modalContent = document.getElementById('modalDetails');
+  const modal = document.getElementById('itemModal');
+  const modalContent = document.getElementById('modalDetails');
 
-        const photos = item.photos ? item.photos.split(',').map(p => p.trim()) : [];
-        const photoElements = photos.map(url =>
-          `<img src="${url}" style="width: 100%; max-height: 400px; object-fit: contain; margin-bottom: 10px;">`
-        ).join('');
+  const photos = item.photos ? item.photos.split(',').map(p => p.trim()) : [];
+  const photoElements = photos.map(url =>
+    `<img src="${url}" style="width: 100%; max-height: 400px; object-fit: contain; margin-bottom: 10px;">`
+  ).join('');
 
-        const documentLinks = item.documents
-          ? item.documents
-            .split(',')
-            .map(doc => {
-              const trimmed = doc.trim();
-              const fileName = trimmed.split('/').pop();
-              const fileNameSimple = trimmed.split('___').pop();
-              const fileDateAdded = fileName.split('___').shift();
-              const ext = fileNameSimple.split('.').pop().toLowerCase();
+  const documentLinks = item.documents
+              ? item.documents
+                .split(',')
+                .map(doc => {
+                  const trimmed = doc.trim();
+                  const fileName = trimmed.split('/').pop();
+                  const fileNameSimple = trimmed.split('___').pop();
+                  const fileDateAdded = fileName.split('___').shift();
+                  const ext = fileNameSimple.split('.').pop().toLowerCase();
 
-              let iconClass = 'fa-file';
-              if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
-              else if (ext === 'pdf') iconClass = 'fa-file-pdf';
-              else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
-              else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
-              else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
-              else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+                  let iconClass = 'fa-file';
+                  if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                  else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                  else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                  else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                  else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                  else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
 
-              return `
+                  return `
               <div class="doc-link">
                 <p class="doc-date">${fileDateAdded}</p>
                 <a href="${trimmed}" target="_blank" title="Preview">
@@ -563,15 +570,15 @@
                 </a>
               </div>
             `;
-            })
-            .join('')
-          : '<p>No documents</p>';
+                })
+                .join('')
+              : '<p>No documents</p>';
 
-        const linksHTML = item.links && item.links.length
-          ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
-          : 'No links';
+  const linksHTML = item.links && item.links.length
+    ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
+    : 'No links';
 
-        modalContent.innerHTML = `
+  modalContent.innerHTML = `
     <div style="display: flex; flex-direction: column; max-height: 90vh; width: 100%;">
       <div style="flex: 1 1 auto; display: flex; gap: 20px; overflow-x: hidden; overflow-y: hidden; box-sizing: border-box;">
 
@@ -587,7 +594,6 @@
 
           <h2>${item.name}</h2>
           <p><strong>Description:</strong><br> ${item.description || 'N/A'}</p>
-          <p><strong>Code:</strong><br> ${item.item_code || 'N/A'}</p>
           <p><strong>Date:</strong> ${item.acquisition_date?.split('T')[0] || 'N/A'}</p>
           <p><strong>Cost:</strong> ${item.cost || 'N/A'}</p>
           <p><strong>Origin:</strong> ${item.origin || 'N/A'}</p>
@@ -610,9 +616,9 @@
     </div>
   `;
 
-        modal.style.display = 'flex';
-        modal.style.zIndex = '900';
-      }
+  modal.style.display = 'flex';
+  modal.style.zIndex = '900';
+}
 
 
 

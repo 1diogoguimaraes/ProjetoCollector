@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Collection</title>
-  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png"/>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
   <link rel="stylesheet" href="/public/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
@@ -24,18 +24,23 @@
     <a href="/" class="logo">
       <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
     </a>
+    
+    <div>    <button  id="menuToggleBtn">Menu</button>
+    
     <nav class="nav-menu">
+  
       <a href="/">Home</a>
       <a href="/index" id="searchTab">Items</a>
       <a href="/add-item" id="addItemTab" class="active">Add Item</a> <!-- updated -->
       <a href="/forum">Forum</a>
 
     </nav>
+</div>
     <div class="user-profile">
 
       <div class="profile-dropdown">
         <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
-        <div class="dropdown-menu" id="profileDropdown">
+        <div class="profile-dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
           <a href="/profile">Profile</a>
           <a href="#">Settings</a>
@@ -79,6 +84,11 @@
           accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
       </div>
       <div class="form-group">
+        <label for="links">Related Links</label>
+        <textarea id="links" name="links" rows="3" placeholder="Enter one URL per line"></textarea>
+      </div>
+
+      <div class="form-group">
         <label for="brand">Item Brand</label>
         <input type="text" id="brand" placeholder="Brand">
       </div>
@@ -106,7 +116,7 @@
   <script src="public/js/utils.js"></script>
 
   <script>
-    
+
 
 
 
@@ -125,7 +135,7 @@
         if (data.username) {
           console.log(data)
           const profileImageUrl = data.profile_image
-          document.getElementById('profileImg').src= profileImageUrl;
+          document.getElementById('profileImg').src = profileImageUrl;
 
         }
       } catch (err) {
@@ -151,6 +161,11 @@
       formData.append('brand', document.getElementById('brand').value.trim());
       formData.append('model', document.getElementById('model').value.trim());
       formData.append('type', document.getElementById('type').value);
+
+      const linksRaw = document.getElementById('links').value.trim();
+      const linksArray = linksRaw.split('\n').map(link => link.trim()).filter(link => link);
+      formData.append('links', JSON.stringify(linksArray)); // Send as JSON string
+
 
       const photos = document.getElementById('photos').files;
       for (let i = 0; i < photos.length; i++) {

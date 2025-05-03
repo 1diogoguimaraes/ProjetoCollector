@@ -6,6 +6,8 @@ const session = require('express-session');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const QRCode = require('qrcode');
+const helmet = require('helmet');
 
 
 require('dotenv').config();
@@ -16,10 +18,10 @@ const port = 3000;
 
 // MySQL database connection
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '', // replace with your MySQL password
-    database: 'collection_db',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
     port: 3307
 });
 
@@ -101,15 +103,29 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Middleware
 app.use(express.json());
+
 //app.use(express.static('public')); 
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 // Serve static files (HTML, CSS)
 app.use(session({
-    secret: 'your_secret_key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-}));
+/*     cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV, //=== 'production' // HTTPS only in production
+      maxAge: 1000 * 60 * 60 * 4 // 2 hours
+    } */
+  }));
+/*   app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect('https://' + req.headers.host + req.url);
+    }
+    next();
+  }); */
+  
+  
 // Serve the registration page
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
@@ -400,66 +416,90 @@ app.post('/user/update-profile', isLoggedIn, profileUpload.single('profileImage'
     const userId = req.session.userId;
     const newEmail = req.body.email;
     let profileImageUrl;
-  
+
     if (req.file) {
-      profileImageUrl = `/public/images/profile_image/${req.file.filename}`;
+        profileImageUrl = `/public/images/profile_image/${req.file.filename}`;
     }
-  
+
     const updateQuery = profileImageUrl
-      ? 'UPDATE users SET email = ?, profile_image_url = ? WHERE id = ?'
-      : 'UPDATE users SET email = ? WHERE id = ?';
-  
+        ? 'UPDATE users SET email = ?, profile_image_url = ? WHERE id = ?'
+        : 'UPDATE users SET email = ? WHERE id = ?';
+
     const queryParams = profileImageUrl
-      ? [newEmail, profileImageUrl, userId]
-      : [newEmail, userId];
-  
+        ? [newEmail, profileImageUrl, userId]
+        : [newEmail, userId];
+
     db.query(updateQuery, queryParams, (err, result) => {
-      if (err) {
-        console.error('Error updating profile:', err);
-        return res.status(500).send('Server error');
-      }
-  
-      res.status(200).send('Profile updated successfully');
+        if (err) {
+            console.error('Error updating profile:', err);
+            return res.status(500).send('Server error');
+        }
+
+        res.status(200).send('Profile updated successfully');
     });
-  });
+});
+
+// Generate QR Code for item ID
+app.get('/items/:id/qrcode', isLoggedIn, (req, res) => {
+    const itemId = req.params.id;
+    const host = req.headers.host;
+    const protocol = req.protocol;
+    const itemUrl = `${protocol}://${host}/items?search=${itemId}&field=item_code`;
+
+    QRCode.toDataURL(itemUrl, (err, url) => {
+        if (err) {
+            console.error('QR generation failed:', err);
+            return res.status(500).send('QR generation failed');
+        }
+        const img = Buffer.from(url.split(",")[1], 'base64');
+        res.set({
+            'Content-Type': 'image/png',
+            'Content-Disposition': `attachment; filename="item-${itemId}-qrcode.png"`,
+        });
+        res.send(img);
+    });
+});
+
 
 // Create item
 app.post('/items', isLoggedIn, upload.fields([
     { name: 'photos', maxCount: 10 },
     { name: 'documents', maxCount: 10 }
 ]), (req, res) => {
-    const { name, description, acquisition_date, cost, origin, brand, model, type } = req.body;
+    const { name, description, acquisition_date, cost, origin, brand, model, type, links } = req.body;
     const userId = req.session.userId;
 
     const photos = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`).join(',');
     const documents = (req.files.documents || []).map(file => `/public/uploads/documents/${file.filename}`).join(',');
-    const query = `
-      INSERT INTO items 
-      (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-    const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, userId];
 
-    db.query(query, values, (err, result) => {
+    // Step 1: Insert the item without item_code
+    const insertQuery = `
+        INSERT INTO items 
+        (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id, links)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, userId, links];
+
+    db.query(insertQuery, values, (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error inserting item');
         }
-        console.log('Inserted item:', {
-            id: result.insertId, // This is the new item's ID
-            name,
-            description,
-            acquisition_date,
-            cost,
-            origin,
-            documents,
-            brand,
-            model,
-            photos,
-            type,
-            userId
+
+        const itemId = result.insertId;
+        const itemCode = `CID00${itemId}`;
+
+        // Step 2: Update the item with the generated item_code
+        const updateQuery = `UPDATE items SET item_code = ? WHERE id = ?`;
+        db.query(updateQuery, [itemCode, itemId], (updateErr) => {
+            if (updateErr) {
+                console.error(updateErr);
+                return res.status(500).send('Error updating item_code');
+            }
+
+            console.log('Inserted item with code:', itemCode);
+            res.status(200).send('Item added successfully with item_code');
         });
-        res.status(200).send('Item added successfully');
     });
 });
 
@@ -470,7 +510,7 @@ app.post('/items', isLoggedIn, upload.fields([
 // Fetch items for the logged-in user
 app.get('/items', isLoggedIn, (req, res) => {
     const searchQuery = req.query.search || '';
-    const allowedFields = ['name', 'description', 'brand', 'model', 'origin']; // whitelist
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin','item_code']; // whitelist
 
     const field = allowedFields.includes(req.query.field) ? req.query.field : 'name'; // fallback to name
 
@@ -585,18 +625,19 @@ app.put('/items/:id', isLoggedIn, upload.fields([
 
 
     const query = `
-      UPDATE items 
-      SET 
-        name = ?, 
-        description = ?, 
-        acquisition_date = ?, 
-        cost = ?, 
-        origin = ?, 
-        documents = ?, 
-        brand = ?, 
-        model = ?, 
-        photos = ?, 
-        type = ?
+UPDATE items 
+SET 
+  name = ?, 
+  description = ?, 
+  acquisition_date = ?, 
+  cost = ?, 
+  origin = ?, 
+  documents = ?, 
+  brand = ?, 
+  model = ?, 
+  photos = ?, 
+  type = ?, 
+  links = ?
       WHERE id = ? AND user_id = ?
     `;
     const values = [
@@ -610,6 +651,7 @@ app.put('/items/:id', isLoggedIn, upload.fields([
         updatedItem.model,
         allPhotos.join(','),
         updatedItem.type,
+        updatedItem.links || [],
         itemId,
         req.session.userId
     ];

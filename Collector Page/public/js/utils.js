@@ -5,6 +5,8 @@
     const profileDropdown = document.getElementById('profileDropdown');
 
     profileImg.addEventListener('click', () => {
+      console.log('Profile image clicked');  // Debug log
+
       profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
     });
 
@@ -44,4 +46,17 @@
       }
     });
     ////////////////////////////////////////////
-    
+
+    const menuBtn = document.getElementById("menuToggleBtn");
+    const navMenu = document.querySelector(".nav-menu");
+  
+    menuBtn.addEventListener("click", () => {
+      navMenu.classList.toggle("show");
+    });
+  
+    // Optional: Hide the menu when clicking outside
+    window.addEventListener("click", (e) => {
+      if (!menuBtn.contains(e.target) && !navMenu.contains(e.target)) {
+        navMenu.classList.remove("show");
+      }
+    });
