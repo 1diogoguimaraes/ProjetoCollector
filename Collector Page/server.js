@@ -8,7 +8,10 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const QRCode = require('qrcode');
 const helmet = require('helmet');
-
+const axios = require('axios');
+const FormData = require('form-data');
+const multer = require('multer');
+const fs = require('fs');
 
 require('dotenv').config();
 
@@ -40,8 +43,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const multer = require('multer');
-const fs = require('fs');
+
 const { profile } = require('console');
 
 // Store uploads in public/uploads
@@ -472,7 +474,6 @@ app.post('/items', isLoggedIn, upload.fields([
     const photos = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`).join(',');
     const documents = (req.files.documents || []).map(file => `/public/uploads/documents/${file.filename}`).join(',');
 
-    // Step 1: Insert the item without item_code
     const insertQuery = `
         INSERT INTO items 
         (name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, user_id, links)
@@ -480,7 +481,7 @@ app.post('/items', isLoggedIn, upload.fields([
     `;
     const values = [name, description, acquisition_date, cost, origin, documents, brand, model, photos, type, userId, links];
 
-    db.query(insertQuery, values, (err, result) => {
+    db.query(insertQuery, values, async (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error inserting item');
