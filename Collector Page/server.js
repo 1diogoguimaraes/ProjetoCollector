@@ -12,8 +12,33 @@ const axios = require('axios');
 const FormData = require('form-data');
 const multer = require('multer');
 const fs = require('fs');
+const fsPromise = require('fs/promises');
+
+const sharp = require('sharp');
+
+const tf = require('@tensorflow/tfjs');
+const mobilenet = require('@tensorflow-models/mobilenet');
+const jpeg = require('jpeg-js');
+
+
 
 require('dotenv').config();
+
+let modelPromise = mobilenet.load();
+let model;
+async function readImage(imagePath) {
+    const { data, info } = await sharp(imagePath).raw().toBuffer({ resolveWithObject: true });
+    const tensor = tf.tensor3d(data, [info.height, info.width, info.channels]);
+    return tensor;
+}
+
+async function extractVector(imagePath) {
+    if (!model) model = await modelPromise;
+    const tensor = await readImage(imagePath);
+    const input = tensor.expandDims(0);
+    const embedding = model.infer(input, true);
+    return Array.from(await embedding.array())[0];
+}
 
 
 const app = express();
@@ -114,20 +139,20 @@ app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
-/*     cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV, //=== 'production' // HTTPS only in production
-      maxAge: 1000 * 60 * 60 * 4 // 2 hours
-    } */
-  }));
+    /*     cookie: {
+          httpOnly: true,
+          secure: process.env.NODE_ENV, //=== 'production' // HTTPS only in production
+          maxAge: 1000 * 60 * 60 * 4 // 2 hours
+        } */
+}));
 /*   app.use((req, res, next) => {
     if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] !== 'https') {
       return res.redirect('https://' + req.headers.host + req.url);
     }
     next();
   }); */
-  
-  
+
+
 // Serve the registration page
 app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
@@ -501,7 +526,97 @@ app.post('/items', isLoggedIn, upload.fields([
             console.log('Inserted item with code:', itemCode);
             res.status(200).send('Item added successfully with item_code');
         });
+
+        ///////////////////////IMAGE VECTOR////////////////////////
+        const photoPaths = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`);
+        const modelName = 'MobileNet';
+
+        for (const file of req.files.photos || []) {
+            const fullPath = file.path;  // path on disk (e.g., "uploads/photos/abc.jpg")
+            const vector = await extractVector(fullPath);
+
+            const insertVecQuery = `
+        INSERT INTO image_vectors (user_id, item_id, photo_path, model, vector)
+        VALUES (?, ?, ?, ?, ?)
+    `;
+            const vecValues = [userId, itemId, `/public/uploads/photos/${file.filename}`, modelName, JSON.stringify(vector)];
+
+            await new Promise((resolve, reject) => {
+                db.query(insertVecQuery, vecValues, (vecErr) => {
+                    if (vecErr) {
+                        console.error('Vector insert error:', vecErr);
+                        return reject(vecErr);
+                    }
+                    resolve();
+                });
+            });
+
+        }
+        /////////////////////////////////////////////////////
+
     });
+});
+
+const searchUpload = multer({ dest: 'uploads/search' });
+
+
+
+app.post('/search-similar', searchUpload.single('image'), async (req, res) => {
+    if (!req.file) return res.status(400).send('No image uploaded');
+
+    try {
+        const queryVec = await extractVector(req.file.path);
+
+        const userId = req.session.userId;
+        const rows = await new Promise((resolve, reject) => {
+            db.query(`
+                SELECT id, user_id, item_id, photo_path, model, vector
+                FROM image_vectors
+                WHERE model = ? AND user_id = ?
+            `, ['MobileNet', userId], (err, results) => {
+                if (err) return reject(err);
+                resolve(results);
+            });
+        });
+
+        const cosineSim = (a, b) => {
+            const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
+            const mag = v => Math.sqrt(v.reduce((sum, val) => sum + val * val, 0));
+            return dot / (mag(a) * mag(b));
+        };
+
+        const MIN_SIMILARITY = parseFloat(req.query.threshold) || 0.8;
+
+        const results = rows
+            .map(row => {
+                const dbVec = JSON.parse(row.vector);
+                return {
+                    vector_id: row.id,
+                    user_id: row.user_id,
+                    item_id: row.item_id,
+                    photo_path: row.photo_path,
+                    similarity: cosineSim(queryVec, dbVec)
+                };
+            })
+            .filter(result => result.similarity >= MIN_SIMILARITY)
+            .sort((a, b) => b.similarity - a.similarity)
+            .slice(0, 10);
+
+        res.json(results);
+
+    } catch (err) {
+        console.error('Search error:', err);
+        res.status(500).send('Vector search failed');
+    }/*  finally {
+        // SAFELY delete temp uploaded file
+        if (req.file && req.file.path) {
+            try {
+                await fsPromise.unlink(req.file.path);
+            } catch (deleteErr) {
+                console.error('Failed to delete uploaded file:', deleteErr);
+            }
+        }
+    } */
 });
 
 
@@ -511,7 +626,7 @@ app.post('/items', isLoggedIn, upload.fields([
 // Fetch items for the logged-in user
 app.get('/items', isLoggedIn, (req, res) => {
     const searchQuery = req.query.search || '';
-    const allowedFields = ['name', 'description', 'brand', 'model', 'origin','item_code']; // whitelist
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'item_code']; // whitelist
 
     const field = allowedFields.includes(req.query.field) ? req.query.field : 'name'; // fallback to name
 
