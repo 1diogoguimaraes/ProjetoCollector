@@ -33,7 +33,7 @@
       <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
     </a>
     <div>
-       <button id="menuToggleBtn">Menu</button>
+      <button id="menuToggleBtn">Menu</button>
 
       <nav class="nav-menu">
         <a href="/">Home</a>
@@ -82,7 +82,7 @@
         <div id="qr-reader" style="width: 300px;"></div>
 
         <input class="search-input" type="text" id="search" placeholder="Search Collection">
-        <button onclick="fetchItems()">Search</button>
+        <button onclick="handleSearch()">Search</button>
 
         <select id="itemsPerPageSelector" onchange="changeItemsPerPage(this.value)">
           <option value="6">6 per page</option>
@@ -98,7 +98,7 @@
           <input type="number" step="0.01" name="threshold" placeholder="Similarity threshold (e.g., 0.8)" />
           <button type="submit">Find Similar Items</button>
         </form>
-        
+
         <div id="results"></div>
 
 
@@ -307,44 +307,44 @@
       ////// SEARCH BY IMAGE FUNCTION ////////////////
 
       document.getElementById('searchForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const threshold = form.threshold.value || '0.8';
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const threshold = form.threshold.value || '0.8';
 
-    try {
-      const res = await fetch(`/search-similar?threshold=${threshold}`, {
-        method: 'POST',
-        body: formData,
-      });
+        try {
+          const res = await fetch(`/search-similar?threshold=${threshold}`, {
+            method: 'POST',
+            body: formData,
+          });
 
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
+          if (!res.ok) {
+            throw new Error(await res.text());
+          }
 
-      const results = await res.json();
-      const resultsContainer = document.getElementById('results');
-      resultsContainer.innerHTML = '';
+          const results = await res.json();
+          const resultsContainer = document.getElementById('results');
+          resultsContainer.innerHTML = '';
 
-      if (results.length === 0) {
-        resultsContainer.textContent = 'No similar items found.';
-        return;
-      }
+          if (results.length === 0) {
+            resultsContainer.textContent = 'No similar items found.';
+            return;
+          }
 
-      results.forEach(item => {
-        const div = document.createElement('div');
-        div.innerHTML = `
+          results.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `
           <p><strong>Item ID:</strong> ${item.item_id}</p>
           <p><strong>Similarity:</strong> ${(item.similarity * 100).toFixed(2)}%</p>
           <img src="${item.photo_path}" alt="Matched Image" width="200" />
           <hr />
         `;
-        resultsContainer.appendChild(div);
+            resultsContainer.appendChild(div);
+          });
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
       });
-    } catch (err) {
-      alert('Error: ' + err.message);
-    }
-  });
 
       //////////////////////////////////////////////////
 
@@ -412,26 +412,27 @@
         const searchQuery = document.getElementById('search').value;
         const searchField = document.getElementById('searchField').value;
 
-        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}`);
-        currentItems = await response.json(); // Store all items
-        currentPage = 1; // Reset to first page on new search
+        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
+        const data = await response.json();
+        currentItems = data.items;
+        totalItems = data.total;
+
         renderPage();
       }
       function renderPage() {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        const paginatedItems = currentItems.slice(startIndex, endIndex);
 
         // Update pagination info
         const pageInfo = document.getElementById('pageInfo');
-        const totalPages = Math.ceil(currentItems.length / itemsPerPage);
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
         pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
         if (viewMode === 'card') {
           const cardContainer = document.getElementById('cardViewContainer');
           cardContainer.innerHTML = '';
 
-          paginatedItems.forEach(item => {
+          currentItems.forEach(item => {
             const card = document.createElement('div');
             card.className = 'item-card';
             currentPhotoIndexes[item.id] = 0;
@@ -454,7 +455,7 @@
             const carouselHTML = photos.length > 1
               ? `<div class="carousel-thumbnails">
       ${photos.map((photo, index) => `
-        <img src="${photo}" class="thumbnail" onclick="changeMainImage(${item.id}, '${photo}')">
+        <img src="${photo}" class="thumbnail" loading="lazy" onclick="changeMainImage(${item.id}, '${photo}')">
       `).join('')}
      </div>`
               : '';
@@ -512,7 +513,7 @@
 
           tableBody.innerHTML = '';
 
-          paginatedItems.forEach(item => {
+          currentItems.forEach(item => {
             const row = document.createElement('tr');
             row.innerHTML = `
         <td>${item.name}</td>
@@ -574,6 +575,10 @@
             tableBody.appendChild(row);
           });
         }
+      }
+      function handleSearch() {
+        currentPage = 1;
+        fetchItems();
       }
       function showItemModal(item) {
         const modal = document.getElementById('itemModal');
@@ -705,23 +710,23 @@
 
 
       function nextPage() {
-        const totalPages = Math.ceil(currentItems.length / itemsPerPage);
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
         if (currentPage < totalPages) {
           currentPage++;
-          renderPage();
+          fetchItems(); // Instead of renderPage()
         }
       }
 
       function prevPage() {
         if (currentPage > 1) {
           currentPage--;
-          renderPage();
+          fetchItems(); // Instead of renderPage()
         }
       }
       function changeItemsPerPage(value) {
         itemsPerPage = parseInt(value);
         currentPage = 1;
-        renderPage();
+        fetchItems();
       }
 
       function toggleDropdown(button) {

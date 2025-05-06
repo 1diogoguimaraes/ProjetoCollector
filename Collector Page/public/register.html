@@ -49,6 +49,22 @@
       const confirmPassword = document.getElementById('confirmPassword').value;
       const email = document.getElementById('email').value;
 
+      if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert("Username must be at least 3 characters and contain only letters, numbers, and underscores.");
+        return;
+      }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+      const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+      if (!passwordPattern.test(password)) {
+        alert("Password must contain at least one uppercase letter, one lowercase letter, and one number.");
+        return;
+      }
+
+
       if (password.length < 6) {
         alert("Password must be at least 6 characters long");
         return;
@@ -58,6 +74,12 @@
         alert("Passwords do not match.");
         return;
       }
+
+      if (!username || !password || !confirmPassword || !email) {
+        alert("All fields are required.");
+        return;
+      }
+
 
       const response = await fetch('/register', {
         method: 'POST',
@@ -72,6 +94,9 @@
         const error = await response.text();
         alert("Registration failed: " + error);
       }
+
+      document.getElementById('registerButton').disabled = false;
+
     }
 
     document.getElementById('registerForm').addEventListener('submit', register);

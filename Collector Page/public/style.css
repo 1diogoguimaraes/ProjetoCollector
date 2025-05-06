@@ -2,6 +2,9 @@
 html {
   scrollbar-gutter: stable;
 
+    scroll-behavior: smooth;
+
+  
 }
 
 body {
@@ -603,6 +606,7 @@ margin-top: 80px;
 }
 
 .no-image {
+  width: 100%;
   height: 300px;
   background-color: #eee;
   display: flex;
@@ -861,6 +865,10 @@ margin-top: 80px;
     min-width: 220px;
     width: 40%;
   }
+  .no-image{
+    max-height: 200px;
+  
+  }
 
   .home-hero {
     height: auto;
@@ -966,6 +974,10 @@ display: block;
   .main-image-wrapper,
   .main-image-wrapper img {
     max-height: 150px;
+  }
+  .no-image{
+    max-height: 150px;
+  
   }
 
   .thumbnail {

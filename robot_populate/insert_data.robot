@@ -52,8 +52,8 @@ Open website collector
     Open Browser    ${LOCALHOST_URL}    ${BROWSER}
     Click Element    loginBtn
     Wait Until Element Is Visible    username
-    Input Text    username    qe
-    Input Password    password    Password.12345
+    Input Text    username    pop
+    Input Password    password    Password.123456
     Click Button    //form/button
 
 Change Tab
@@ -62,7 +62,7 @@ Change Tab
     Click Element     ${CHANGE_TAB}
     
 Insert Data
-    Wait Until Element Is Visible    name
+    Wait Until Element Is Visible    name    timeout=60
 
         # Fill text fields with random words
     ${random_index}=    Evaluate    random.randint(0, len(${WORDS}) - 1)    modules=random
@@ -113,6 +113,10 @@ Insert Data
 
 
     Click Button    Add Item
+    Sleep    20
+    ##Wait Until Element Is Visible   //div[@id="formMessage" and contains(text(), "Item added successfully")]
+
+
 
 Delete Data
     Wait Until Element Is Visible    locator=//button[contains(@onclick, 'delete')]

@@ -6,6 +6,8 @@ const session = require('express-session');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+
 const QRCode = require('qrcode');
 const helmet = require('helmet');
 const axios = require('axios');
@@ -27,7 +29,8 @@ require('dotenv').config();
 let modelPromise = mobilenet.load();
 let model;
 async function readImage(imagePath) {
-    const { data, info } = await sharp(imagePath).raw().toBuffer({ resolveWithObject: true });
+    const imageBuffer = await fsPromise.readFile(imagePath); // ✅ Read file manually
+    const { data, info } = await sharp(imageBuffer).raw().toBuffer({ resolveWithObject: true }); // ✅ Pass buffer instead of path
     const tensor = tf.tensor3d(data, [info.height, info.width, info.channels]);
     return tensor;
 }
@@ -59,14 +62,29 @@ db.connect((err) => {
 });
 
 // Create a transporter using your email credentials
-const transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+const oAuth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    process.env.REDIRECT_URI
+);
+
+oAuth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
+
+async function createTransporter() {
+    const accessToken = await oAuth2Client.getAccessToken();
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            type: 'OAuth2',
+            user: process.env.EMAIL_USER, // your Gmail address
+            clientId: process.env.CLIENT_ID,
+            clientSecret: process.env.CLIENT_SECRET,
+            refreshToken: process.env.REFRESH_TOKEN,
+            accessToken: accessToken.token,
+        },
+    });
+}
 
 
 const { profile } = require('console');
@@ -95,8 +113,12 @@ const storage = multer.diskStorage({
         const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
         const year = now.getFullYear();
 
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+
         const formattedDate = `${day}-${month}-${year}`;
-        const uniqueName = /* Date.now() */formattedDate + '___' + decodedOriginalName;
+        const uniqueName = formattedDate + '___' + decodedOriginalName;
         cb(null, uniqueName);
     }
 });
@@ -174,10 +196,12 @@ app.get('/home', (req, res) => {
 
 
 // Forgot Password (store token in DB)
-app.post('/forgot-password', (req, res) => {
+app.post('/forgot-password', async (req, res) => {
     const { value } = req.body;
+    const host = req.headers.host;
+    const protocol = req.protocol;
 
-    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [value, value], (err, results) => {
+    db.query('SELECT * FROM users WHERE username = ? OR email = ?', [value, value], async (err, results) => {
         if (err) return res.status(500).send('Server error');
         if (results.length === 0) return res.status(404).send('User not found');
 
@@ -188,30 +212,34 @@ app.post('/forgot-password', (req, res) => {
         db.query(
             'INSERT INTO password_resets (username, token, expires_at) VALUES (?, ?, ?)',
             [user.username, token, expiresAt],
-            (err) => {
+            async (err) => {
                 if (err) return res.status(500).send('Server error');
 
-                const resetLink = `http://localhost:3000/reset-password/${token}`;
+                const resetLink = `${protocol}://${host}/reset-password/${token}`;
                 const mailOptions = {
-                    from: 'your-email@gmail.com',
+                    from: `My Collector <${process.env.EMAIL_USER}>`,
                     to: user.email,
-                    subject: 'Password Reset Link',
-                    html: `<p>Click <a href="${resetLink}">here</a> to reset your password</p>`
+                    subject: 'Password Reset Link - My Collector',
+                    html: `<p>Hi ${user.username},</p>
+<p>You requested a password reset. Click the button below:</p>
+<p><a href="${resetLink}" style="background: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+<p>If you didn’t request this, just ignore this email.</p>
+`,
                 };
 
-                transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) {
-                        console.error('Error sending email:', error);
-                        return res.status(500).send('Error sending email');
-                    }
-                    console.log('Email sent: ' + info.response);
+                try {
+                    const transporter = await createTransporter();
+                    await transporter.sendMail(mailOptions);
                     res.send('Password reset link has been sent to your email');
-                });
-
+                } catch (error) {
+                    console.error('Error sending email:', error);
+                    res.status(500).send('Error sending email');
+                }
             }
         );
     });
 });
+
 
 //validate link
 app.get('/reset-password/:token/validate', (req, res) => {
@@ -234,14 +262,13 @@ app.post('/reset-password/:token', (req, res) => {
     const { token } = req.params;
     const { newPassword } = req.body;
 
-    // Validate password before anything else
     if (!newPassword || newPassword.length < 6) {
         return res.status(400).send('Password must be at least 6 characters long');
     }
 
     db.query('SELECT * FROM password_resets WHERE token = ? AND expires_at > NOW()', [token], (err, results) => {
         if (err || results.length === 0) {
-            return res.status(410).send('Token expired or invalid'); // 410 Gone is semantically accurate
+            return res.status(410).send('Token expired or invalid');
         }
 
         const username = results[0].username;
@@ -258,6 +285,7 @@ app.post('/reset-password/:token', (req, res) => {
         });
     });
 });
+
 
 
 // Register API
@@ -607,16 +635,18 @@ app.post('/search-similar', searchUpload.single('image'), async (req, res) => {
     } catch (err) {
         console.error('Search error:', err);
         res.status(500).send('Vector search failed');
-    }/*  finally {
-        // SAFELY delete temp uploaded file
+    } finally {
         if (req.file && req.file.path) {
-            try {
-                await fsPromise.unlink(req.file.path);
-            } catch (deleteErr) {
-                console.error('Failed to delete uploaded file:', deleteErr);
-            }
+            const filePath = req.file.path;
+            console.log('Scheduled deletion for:', filePath);
+
+            setTimeout(() => {
+                fsPromise.unlink(filePath)
+                    .then(() => console.log('Deleted file:', filePath))
+                    .catch(err => console.error('Failed to delete uploaded file:', err));
+            }, 200); // 200ms delay to avoid OS lock
         }
-    } */
+    }
 });
 
 
@@ -626,61 +656,81 @@ app.post('/search-similar', searchUpload.single('image'), async (req, res) => {
 // Fetch items for the logged-in user
 app.get('/items', isLoggedIn, (req, res) => {
     const searchQuery = req.query.search || '';
-    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'item_code']; // whitelist
-
-    const field = allowedFields.includes(req.query.field) ? req.query.field : 'name'; // fallback to name
-
-    const query = `SELECT * FROM items WHERE user_id = ? AND ${field} LIKE ?`;
-    const values = [req.session.userId, `%${searchQuery}%`];
-
-    db.query(query, values, (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error fetching items');
-        }
-        res.json(results);
-    });
-});
-
-// Fetch items for logged in user FORUM
-app.get('/itemsForum', isLoggedIn, (req, res) => {
-    const searchQuery = req.query.search || '';
-
-    // ✅ Now includes 'username' as allowed search field
-    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'username'];
-
-    const field = allowedFields.includes(req.query.field) ? req.query.field : 'name';
-
-    // ✅ Proper table prefixing
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'item_code'];
     const fieldMap = {
-        name: 'items.name',
-        description: 'items.description',
-        brand: 'items.brand',
-        model: 'items.model',
-        origin: 'items.origin',
-        username: 'users.username'
+        name: 'name',
+        description: 'description',
+        brand: 'brand',
+        model: 'model',
+        origin: 'origin',
+        item_code: 'item_code'
     };
 
-    const dbField = fieldMap[field];
+    const field = fieldMap[req.query.field] || 'name';
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const MAX_LIMIT = 100;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, MAX_LIMIT);
+    const offset = (page - 1) * limit;
 
-    const query = `
-        SELECT items.*, users.username 
-        FROM items 
-        JOIN users ON items.user_id = users.id 
-        WHERE items.type = 'public' AND ${dbField} LIKE ?
-    `;
-    const values = [`%${searchQuery}%`];
+    const countQuery = `SELECT COUNT(*) AS total FROM items WHERE user_id = ? AND ${field} LIKE ?`;
+    const dataQuery = `SELECT * FROM items WHERE user_id = ? AND ${field} LIKE ? LIMIT ? OFFSET ?`;
+    const searchPattern = `%${searchQuery}%`;
 
-    db.query(query, values, (err, results) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error fetching items');
-        }
-        res.json(results);
+    db.query(countQuery, [req.session.userId, searchPattern], (countErr, countResults) => {
+        if (countErr) return res.status(500).send('Error counting items');
+
+        const total = countResults[0].total;
+
+        db.query(dataQuery, [req.session.userId, searchPattern, limit, offset], (dataErr, results) => {
+            if (dataErr) return res.status(500).send('Error fetching items');
+
+            res.json({
+                items: results,
+                total
+            });
+        });
     });
 });
 
 
+// Fetch all public items for the forum
+app.get('/itemsForum', isLoggedIn, (req, res) => {
+    const searchQuery = req.query.search || '';
+    const allowedFields = ['name', 'description', 'brand', 'model', 'origin', 'item_code'];
+    const fieldMap = {
+        name: 'name',
+        description: 'description',
+        brand: 'brand',
+        model: 'model',
+        origin: 'origin',
+        item_code: 'item_code'
+    };
+
+    const field = fieldMap[req.query.field] || 'name';
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const MAX_LIMIT = 100;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 10, MAX_LIMIT);
+    const offset = (page - 1) * limit;
+
+    const countQuery = `SELECT COUNT(*) AS total FROM items JOIN users ON items.user_id = users.id WHERE type='public' AND ${field} LIKE ?`;
+    const dataQuery = `SELECT * FROM items JOIN users ON items.user_id = users.id WHERE type='public' AND ${field} LIKE ? LIMIT ? OFFSET ?`;
+    const searchPattern = `%${searchQuery}%`;
+
+    db.query(countQuery, [searchPattern], (countErr, countResults) => {
+        if (countErr) return res.status(500).send('Error counting items');
+
+        const total = countResults[0].total;
+
+        db.query(dataQuery, [searchPattern, limit, offset], (dataErr, results) => {
+            if (dataErr) return res.status(500).send('Error fetching items');
+
+            res.json({
+                items: results,
+                total
+            });
+        });
+    });
+});
 
 
 
@@ -793,14 +843,44 @@ SET
 app.delete('/items/:id', (req, res) => {
     const { id } = req.params;
 
-    db.query('DELETE FROM items WHERE id = ?', [id], (err, result) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
-        res.json({ message: 'Item deleted' });
+    // Step 1: Get file paths
+    db.query('SELECT photos, documents FROM items WHERE id = ?', [id], (selectErr, results) => {
+        if (selectErr) return res.status(500).send(selectErr);
+        if (results.length === 0) return res.status(404).send('Item not found');
+
+        const { photos, documents } = results[0];
+
+        // Step 2: Delete files
+        const deleteFiles = (filePaths) => {
+            if (!filePaths) return;
+            filePaths.split(',').forEach(filePath => {
+                const fullPath = path.join(__dirname, filePath);
+                fs.unlink(fullPath, err => {
+                    if (err) {
+                        console.error(`Error deleting file ${fullPath}:`, err.message);
+                    }
+                });
+            });
+        };
+
+        deleteFiles(photos);
+        deleteFiles(documents);
+
+        // Step 3: Delete from image_vectors
+        db.query('DELETE FROM image_vectors WHERE item_id = ?', [id], (vecErr) => {
+            if (vecErr) {
+                console.error('Error deleting image vectors:', vecErr);
+                return res.status(500).send('Error deleting image vectors');
+            }
+
+            // Step 4: Delete item from items table
+            db.query('DELETE FROM items WHERE id = ?', [id], (delErr) => {
+                if (delErr) return res.status(500).send(delErr);
+                res.json({ message: 'Item, associated files, and image vectors deleted' });
+            });
+        });
     });
 });
-
 
 /////////////////////////////////////////////////////
 
