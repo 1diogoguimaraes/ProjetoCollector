@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
+  <link rel="stylesheet" href="/public/style.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Libre+Baskerville:wght@400;700&display=swap"
+    rel="stylesheet">
+
+
+</head>
+
+<body>
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <p>De certeza que quer fazer sair ?</p>
+      <div class="modal-buttons">
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+      
+    </a>
+<div>
+    <button  id="menuToggleBtn">Menu</button>
+    <nav class="nav-menu">
+      <a href="/" class="active">Início</a>
+      <a href="/index" id="searchTab">Items</a>
+      <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
+      <a href="/forum">Forum</a>
+    </nav>
+  </div>
+    <button onclick="location.href='/login'" id="loginBtn" style="display: none;">Login</button>
+
+
+    <div class="user-profile" id="userProfile" style="display: none;">
+
+      <div class="profile-dropdown">
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="home-hero-content">
+      <h1>Bem Vindo à My Collector</h1>
+      <p style="text-align: center;">A sua plataforma para organizar os seus items.</p>
+    </div>
+  </div>
+
+
+  <script src="public/js/utils.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Fetch user information to determine login status
+      fetch('/user')
+        .then(res => res.json())
+        .then(data => {
+          if (data.username) {
+            // User is logged in
+            console.log("Logged in as:", data.username);
+            document.getElementById('usernameDisplay').textContent = data.username;
+            document.getElementById('userProfile').style.display = 'flex';
+          } else {
+            // User is not logged in
+            console.log("No user found");
+            document.getElementById('loginBtn').style.display = 'flex';
+          }
+        })
+        .catch(err => {
+          // Error fetching user data - show login button as fallback
+          console.error('Error checking user login status:', err);
+          document.getElementById('loginBtn').style.display = 'flex';
+        });
+    });
+
+
+    async function loadUserInfo() {
+      const response = await fetch('/user');
+      const data = await response.json();
+      if (data.username) {
+        document.getElementById('usernameDisplay').innerText = `${data.username}`;
+      }
+    }
+    async function loadUserData() {
+      try {
+        const response = await fetch('/user/profile-data');
+        const data = await response.json();
+        if (data.username) {
+          console.log(data)
+          const profileImageUrl = data.profile_image
+          document.getElementById('profileImg').src = profileImageUrl;
+
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
+
+    loadUserInfo();
+    loadUserData();
+  </script>
+
+
+
+</body>
+
+</html>

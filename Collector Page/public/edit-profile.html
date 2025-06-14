@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
+  <link rel="stylesheet" href="/public/style.css" />
+</head>
+
+<body>
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+    <div>
+      <button id="menuToggleBtn">Menu</button>
+
+      <nav class="nav-menu">
+        <a href="/" class="active">Início</a>
+        <a href="/index" id="searchTab">Items</a>
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
+        <a href="/forum">Forum</a>
+      </nav>
+    </div>
+
+    <a href="/login" class="btn-cta" id="loginBtn" style="display: none;">Login</a>
+
+
+    <div class="user-profile">
+      <div class="profile-dropdown">
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+  </header>
+  <div class="container edit-profile-container">
+    <h1>Edit Perfil</h1>
+    <form id="editProfileForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="email">Novo Email</label>
+        <input type="email" id="email" name="email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="profileImage">Perfil Imagem</label>
+        <input type="file" id="profileImage" name="profileImage" accept="image/*" />
+      </div>
+
+      <button type="submit" class="btn-save">Guardar Alterações</button>
+    </form>
+    <a href="/profile" class="btn-back">Cancelar</a>
+  </div>
+
+  <script src="public/js/utils.js"></script>
+
+  <script>
+    // Load current user data
+    async function loadCurrentProfile() {
+      const res = await fetch('/user/profile-data');
+      const data = await res.json();
+      document.getElementById('email').value = data.email;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCurrentProfile);
+
+    // Handle form submission
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+
+      const response = await fetch('/user/update-profile', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert('Perfil updated!');
+        window.location.href = '/profile';
+      } else {
+        alert('Failed to update profile.');
+      }
+    });
+  </script>
+</body>
+
+</html>

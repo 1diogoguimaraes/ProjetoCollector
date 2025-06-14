@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
+  <link rel="stylesheet" href="/public/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+</head>
+
+<body>
+
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <p>De certeza que quer fazer sair ?</p>
+      <div class="modal-buttons">
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Top Banner -->
+
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+    <div>
+      <button id="menuToggleBtn">Menu</button>
+
+      <nav class="nav-menu">
+        <a href="/">Início</a>
+        <a href="/index" id="searchTab">Items</a>
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
+        <a href="/forum" class="active">Forum</a>
+
+      </nav>
+    </div>
+    <div class="user-profile">
+      <div class="profile-dropdown">
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+
+  </header>
+
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Top Menu -->
+    <!--     
+    <nav class="menu">
+      <button id="searchTab" class="active">🔍 Procurar</button>
+      <button id="addItemTab">➕ Adicionar</button>
+    </nav> -->
+
+    <!-- Procurar Section -->
+    <div id="searchSection" class="section active">
+      <div>
+        <select id="searchField">
+          <option value="name">Nome</option>
+          <option value="description">Descrição</option>
+          <option value="brand">Marca</option>
+          <option value="model">Modelo</option>
+          <option value="origin">Origem</option>
+          <option value="item_code">ID</option>
+
+        </select>
+
+
+        <input class="search-input" type="text" id="search" placeholder="Procurar Collection">
+        <button onclick="handleSearch()">Procurar</button>
+
+        <select id="itemsPerPageSelector" onchange="changeItemsPerPage(this.value)">
+          <option value="6">6 por página</option>
+          <option value="12">12 por página</option>
+          <option value="24">24 por página</option>
+          <option value="100">100 por página</option>
+        </select>
+        <button onclick="startQrScanner()">Procurar QR</button>
+
+        <button onclick="setViewMode('card')">Cartões</button>
+        <button onclick="setViewMode('table')">Tabela</button>
+        <form id="searchForm" enctype="multipart/form-data">
+          <input type="file" name="image" required />
+          <input type="number" step="0.01" name="threshold" placeholder="Similarity threshold (e.g., 0.8)" />
+          <button type="submit">Procurar Items Semelhantes</button>
+        </form>
+
+        <div id="results"></div>
+        <div id="qr-reader" style="width: 300px;"></div>
+
+
+
+      </div>
+      <!-- Cartões Container -->
+      <div id="cardViewContainer" class="card-grid" style="position: relative;">
+
+      </div>
+
+      <!-- Tabela Container -->
+      <div id="tableWrapper" style="overflow-x: auto; width: 100%;">
+
+        <table id="tableViewContainer" border="1" cellpadding="8" cellspacing="0"
+          style="width: 100%; display: none; margin-top: 16px;">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Data de Aquisição</th>
+              <th>Custo</th>
+              <th>Origem</th>
+              <th>Documentos</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Fotos</th>
+              <th>Links</th>
+              <th>User</th>
+
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="paginationControls" style="text-align: center;">
+        <button onclick="prevPage()">Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <a href="/forum#"><button onclick="nextPage()">Próxima</button></a>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+      <div class="modal-content">
+        <p>De certeza que quer eliminar este item?</p>
+        <div class="modal-buttons">
+          <button id="confirmDeleteBtn" class="btn-confirm">Sim, eliminar</button>
+          <button id="cancelDeleteBtn" class="btn-cancel">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editer Item Modal -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h2>Editer Item</h2>
+        <div class="modal-scroll">
+          <form id="editItemForm">
+            <input type="hidden" id="edit-id">
+
+            <div class="form-group">
+              <label for="edit-name">Nome Item</label>
+              <input type="text" id="edit-name" placeholder="Nome Item" required>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-description">Descrição</label>
+              <input type="text" id="edit-description" placeholder="Descrição" required>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-acquisition_date">Data de Aquisição</label>
+              <input type="date" id="edit-acquisition_date" placeholder="Data de Aquisição">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-cost">Custo do Item</label>
+              <input type="number" id="edit-cost" placeholder="Custo " step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-origin">Origem</label>
+              <input type="text" id="edit-origin" placeholder="Origem">
+            </div>
+
+            <!-- Updated document input with preview -->
+            <div class="form-group">
+              <label for="edit-documents">Carregar Documentos</label>
+              <div id="edit-documents-preview" style="margin-bottom: 10px;"></div>
+              <input type="file" id="edit-documents" name="documents" multiple
+                accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-brand">Marca</label>
+              <input type="text" id="edit-brand" placeholder="Marca">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-model">Modelo</label>
+              <input type="text" id="edit-model" placeholder="Modelo">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-photos">Carregar Fotos</label>
+              <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+              </div>
+              <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
+            </div>
+            <div class="form-group">
+              <label for="edit-links">External Links</label>
+              <textarea id="edit-links" rows="4" placeholder="Enter one link per line"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="edit-type">Tipo de Coleção</label>
+              <select id="edit-type">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
+            <div class="modal-buttons">
+              <button type="submit" class="btn-confirm">Alterar</button>
+              <button type="button" id="cancelEditBtn" class="btn-cancel">Cancelar</button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+    <div id="imageModal" class="modal"
+      style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.9); justify-content:center; align-items:center;">
+
+      <span id="closeModal"
+        style="position:absolute; top:20px; right:30px; color:#fff; font-size:30px; cursor:pointer;">&times;</span>
+
+      <span id="prevImage"
+        style="position:absolute; left:30px; color:#fff; font-size:40px; cursor:pointer;">&#10094;</span>
+      <img id="modalImage" style="max-width:90%; max-height:90%; border-radius:8px;" />
+      <span id="nextImage"
+        style="position:absolute; right:30px; color:#fff; font-size:40px; cursor:pointer;">&#10095;</span>
+    </div>
+
+    <!-- Item modal -->
+    <div id="itemModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close-button" onclick="closeModal()"
+          style="cursor: pointer; text-align: right; display: block;">✖️</span>
+        <div id="modalDetails"></div>
+      </div>
+    </div>
+
+
+
+    <!-- Script -->
+    <script src="public/js/utils.js"></script>
+
+    <script>
+      function startQrScanner() {
+        const qrScanner = new Html5Qrcode("qr-reader");
+
+        const stopTimeout = setTimeout(() => {
+          qrScanner.stop().then(() => {
+            console.log("QR scanner stopped after timeout.");
+          }).catch((err) => {
+            console.error("Error stopping QR scanner:", err);
+          });
+        }, 20000); // 10000 ms = 10 seconds
+
+        qrScanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 30,
+            qrbox: 250
+          },
+          (decodedText) => {
+            clearTimeout(stopTimeout); // Stop the timer once QR is scanned
+            qrScanner.stop();
+
+            // Extract ID from the decoded URL
+            const url = new URL(decodedText);
+            const searchId = url.searchParams.get("search");
+            const field = url.searchParams.get("field");
+
+            // Set the search input and field
+            document.getElementById('search').value = searchId;
+            document.getElementById('searchField').value = field;
+            // Trigger the search
+            fetchItems();
+          },
+          (err) => {
+            console.warn(`QR error: ${err}`);
+          }
+        );
+      }
+
+      /////////////////////////////////////////////
+
+      ////// SEARCH BY IMAGE FUNCTION ////////////////
+
+      document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const threshold = form.threshold.value || '0.8';
+
+        try {
+          const res = await fetch(`/search-similar?threshold=${threshold}`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) {
+            throw new Error(await res.text());
+          }
+
+          const results = await res.json();
+          const resultsContainer = document.getElementById('results');
+          resultsContainer.innerHTML = '';
+
+          if (results.length === 0) {
+            resultsContainer.textContent = 'No similar items found.';
+            return;
+          }
+
+          results.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+          <p><strong>Item ID:</strong> ${item.item_id}</p>
+          <p><strong>Similarity:</strong> ${(item.similarity * 100).toFixed(2)}%</p>
+          <img src="${item.photo_path}" alt="Matched Image" width="200" />
+          <hr />
+        `;
+            resultsContainer.appendChild(div);
+          });
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      });
+
+      //////////////////////////////////////////////////
+
+      let viewMode = 'card'; // or 'table'
+      function setViewMode(mode) {
+        viewMode = mode;
+        document.getElementById('cardViewContainer').style.display = mode === 'card' ? 'flex' : 'none';
+        document.getElementById('tableViewContainer').style.display = mode === 'table' ? 'table' : 'none';
+        renderPage();
+      }
+
+
+      //////////////////////////////////////////////////
+      document.getElementById('search').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault(); // prevent accidental form submission
+          fetchItems();
+        }
+      });
+
+      function popFromEnd(str, delimiter) {
+        const index = str.lastIndexOf(delimiter);
+        if (index === -1) return [str, '']; // No delimiter found
+        return [str.slice(0, index), str.slice(index + delimiter.length)];
+      }
+
+
+
+
+      searchTab.addEventListener('click', () => switchTab('search'));
+      addItemTab.addEventListener('click', () => switchTab('add'));
+
+
+
+
+      // Fetch Items
+      let currentPage = 1;
+      let itemsPerPage = 6; // You can make this dynamic if needed
+      let currentItems = [];  // Store fetched items
+      const currentPhotoIndexes = {};
+
+
+      async function fetchItems() {
+        const searchQuery = document.getElementById('search').value;
+        const searchField = document.getElementById('searchField').value;
+
+
+
+
+        try {
+          const response = await fetch(`/itemsForum?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
+          const data = await response.json();
+          currentItems = data.items;
+          totalItems = data.total;
+          renderPage();
+        } catch (error) {
+          console.error('Failed to fetch items:', error);
+          alert('Error loading data.');
+        }
+      }
+
+
+      function renderPage() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+
+        // Update pagination info
+        const pageInfo = document.getElementById('pageInfo');
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        pageInfo.textContent = `Página ${currentPage} of ${totalPages}`;
+
+        if (viewMode === 'card') {
+          const cardContainer = document.getElementById('cardViewContainer');
+          cardContainer.innerHTML = '';
+
+          currentItems.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            currentPhotoIndexes[item.id] = 0;
+
+            const photos = item.photos ? item.photos.split(',').map(p => p.trim()).filter(Boolean) : [];
+
+            const mainPhoto = photos.length > 0 ? photos[0] : null; // This is the initially shown main image
+            const mainImageSection = mainPhoto
+              ? `
+  <div class="main-image-wrapper">
+    <button class="arrow left" onclick="prevImage(${item.id}, '${photos.join('|')}')">&#9664;</button>
+    <img id="main-img-${item.id}" src="${mainPhoto}" alt="Main Photo" onclick="handleImageClick(${item.id}, '${photos.join('|')}')">
+    <button class="arrow right" onclick="nextImage(${item.id}, '${photos.join('|')}')">&#9654;</button>
+  </div>
+  `
+              : '<div class="no-image">No image available</div>';
+
+
+
+            const carouselHTML = photos.length > 1
+              ? `<div class="carousel-thumbnails">
+      ${photos.map((photo, index) => `
+        <img src="${photo}" class="thumbnail" loading="lazy" onclick="changeMainImage(${item.id}, '${photo}')">
+      `).join('')}
+     </div>`
+              : '';
+            const documentLinks = item.documents
+              ? item.documents
+                .split(',')
+                .map(doc => {
+                  const trimmed = doc.trim();
+                  const fileName = trimmed.split('/').pop();
+                  const fileNameSimple = trimmed.split('___').pop();
+                  const fileDateAdded = fileName.split('___').shift();
+                  const ext = fileNameSimple.split('.').pop().toLowerCase();
+
+                  let iconClass = 'fa-file';
+                  if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                  else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                  else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                  else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                  else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                  else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+
+                  return `
+              <div class="doc-link">
+                <p class="doc-date">${fileDateAdded}</p>
+                <a href="${trimmed}" target="_blank" title="Preview">
+                  <i class="fas ${iconClass}"></i> ${fileNameSimple}
+                </a>
+                <a href="${trimmed}" download="${fileName}" title="Download">
+                  <i class="fas fa-download"></i>
+                </a>
+              </div>
+            `;
+                })
+                .join('')
+              : '<p>Sem Documentos</p>';
+
+            card.innerHTML = `
+<div class="card-img">
+  ${mainImageSection}
+  ${carouselHTML}
+</div>
+
+      <div class="card-content">
+        <h3>${item.name}</h3>
+        <p>${item.username || 'N/A'}</p>
+      </div>
+    `;
+
+            cardContainer.appendChild(card);
+            card.querySelector('.card-content').addEventListener('click', () => showItemModal(item));
+
+          });
+
+        } else if (viewMode === 'table') {
+          const tableBody = document.querySelector('#tableViewContainer tbody');
+
+          tableBody.innerHTML = '';
+
+          currentItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.description}</td>
+        <td>${item.acquisition_date?.split('T')[0] || 'N/A'}</td>
+        <td>${item.cost || 'N/A'}</td>
+        <td>${item.origin || 'N/A'}</td>
+        <td>${item.documents
+                ? item.documents
+                  .split(',')
+                  .map(doc => {
+                    const trimmed = doc.trim();
+                    const fileName = trimmed.split('/').pop();
+                    const fileNameSimple = trimmed.split('___').pop();
+                    const fileDateAdded = fileName.split('___').shift();
+                    const ext = fileNameSimple.split('.').pop().toLowerCase();
+
+                    let iconClass = 'fa-file';
+                    if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                    else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                    else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                    else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                    else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                    else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+
+                    return `
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                      <p style="font-size:12px; color:lightgrey; margin:0;">${fileDateAdded}</p>
+                      <a href="${trimmed}" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:4px;" title="Preview">
+                        <i class="fas ${iconClass}" style="color:grey;"></i> ${fileNameSimple}
+                      </a>
+                      <a href="${trimmed}" download="${fileName}" title="Download">
+                        <i class="fas fa-download" style="color:darkgrey;"></i>
+                      </a>
+                    </div>
+                  `;
+                  }).join('')
+                : 'Sem Documentos'
+              }</td>
+        <td>${item.brand || 'N/A'}</td>
+        <td>${item.model || 'N/A'}</td>
+        <td>${item.photos
+                ? item.photos
+                  .split(',')
+                  .map((url, index) => `<img src="${url.trim()}" style="width:50px;height:auto;margin-right:4px;cursor:pointer;" onclick="openImageModal('${item.photos.split(',').join('|')}', ${index})">`)
+                  .join('')
+                : 'No images'}
+        </td>
+        <td>${item.links && item.links.length
+                ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="display:block;  word-break:break-word;">${link}</a>`).join('')
+                : 'No links'
+              }</td>
+        <td>${item.username || 'N/A'}</td>
+      `;
+            tableBody.appendChild(row);
+          });
+        }
+      }
+      function handleSearch() {
+        currentPage = 1;
+        fetchItems();
+      }
+      function showItemModal(item) {
+        const modal = document.getElementById('itemModal');
+        const modalContent = document.getElementById('modalDetails');
+
+        const photos = item.photos ? item.photos.split(',').map(p => p.trim()) : [];
+        const photoElements = photos.map(url =>
+          `<img src="${url}" style="width: 100%; max-height: 400px; object-fit: contain; margin-bottom: 10px;">`
+        ).join('');
+
+        const documentLinks = item.documents
+          ? item.documents
+            .split(',')
+            .map(doc => {
+              const trimmed = doc.trim();
+              const fileName = trimmed.split('/').pop();
+              const fileNameSimple = trimmed.split('___').pop();
+              const fileDateAdded = fileName.split('___').shift();
+              const ext = fileNameSimple.split('.').pop().toLowerCase();
+
+              let iconClass = 'fa-file';
+              if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+              else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+              else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+              else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+              else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+              else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+
+              return `
+              <div class="doc-link">
+                <p class="doc-date">${fileDateAdded}</p>
+                <a href="${trimmed}" target="_blank" title="Preview">
+                  <i class="fas ${iconClass}"></i> ${fileNameSimple}
+                </a>
+                <a href="${trimmed}" download="${fileName}" title="Download">
+                  <i class="fas fa-download"></i>
+                </a>
+              </div>
+            `;
+            })
+            .join('')
+          : '<p>Sem Documentos</p>';
+
+        const linksHTML = item.links && item.links.length
+          ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
+          : 'No links';
+
+        modalContent.innerHTML = `
+    <div style="display: flex; flex-direction: column; max-height: 90vh; width: 100%;">
+      <div style="flex: 1 1 auto; display: flex; gap: 20px; overflow-x: hidden; overflow-y: hidden; box-sizing: border-box;">
+
+        
+        <!-- Scrollable photos column -->
+        <div style="flex: 1; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; box-sizing: border-box;">
+
+          ${photoElements || '<p>No images</p>'}
+        </div>
+
+        <!-- Scrollable content column -->
+        <div style="flex: 1; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; box-sizing: border-box;">
+
+          <h2>${item.name}</h2>
+          <p><strong>Descrição:</strong><br> ${item.description || 'N/A'}</p>
+          <p><strong>Date:</strong> ${item.acquisition_date?.split('T')[0] || 'N/A'}</p>
+          <p><strong>Custo:</strong> ${item.cost || 'N/A'}</p>
+          <p><strong>Origem:</strong> ${item.origin || 'N/A'}</p>
+          <p><strong>Marca:</strong> ${item.brand || 'N/A'}</p>
+          <p><strong>Modelo:</strong> ${item.model || 'N/A'}</p>
+          <div><strong>Links:</strong><br>${linksHTML || 'N/A'}</div>
+          <div><strong>Documentos:</strong>${documentLinks}</div>
+        </div>
+      </div>
+
+
+    </div>
+  `;
+
+        modal.style.display = 'flex';
+        modal.style.zIndex = '900';
+      }
+
+
+
+
+
+      function closeModal() {
+        document.getElementById('itemModal').style.display = 'none';
+      }
+
+
+      function changeMainImage(itemId, newSrc) {
+        const mainImg = document.getElementById(`main-img-${itemId}`);
+        if (mainImg) {
+          mainImg.src = newSrc;
+        }
+      }
+      function handleImageClick(itemId, allPhotosJoined) {
+        const photosArray = allPhotosJoined.split('|');
+        const mainImg = document.getElementById(`main-img-${itemId}`);
+        const currentSrc = mainImg?.src || '';
+        const index = photosArray.findIndex(p => currentSrc.includes(p.split('/').pop()));
+        openImageModal(allPhotosJoined, index >= 0 ? index : 0);
+      }
+
+      function prevImage(itemId, allPhotosJoined) {
+        const photos = allPhotosJoined.split('|');
+        if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
+
+        currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] - 1 + photos.length) % photos.length;
+        changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
+      }
+
+      function nextImage(itemId, allPhotosJoined) {
+        const photos = allPhotosJoined.split('|');
+        if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
+
+        currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] + 1) % photos.length;
+        changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
+      }
+
+
+      function nextPage() {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (currentPage < totalPages) {
+          currentPage++;
+          fetchItems(); // Instead of renderPage()
+        }
+      }
+
+      function prevPage() {
+        if (currentPage > 1) {
+          currentPage--;
+          fetchItems(); // Instead of renderPage()
+        }
+      }
+      function changeItemsPerPage(value) {
+        itemsPerPage = parseInt(value);
+        currentPage = 1;
+        fetchItems();
+      }
+
+      function toggleDropdown(button) {
+        const dropdown = button.nextElementSibling;
+        const allDropdowns = document.querySelectorAll('.dropdown-menu');
+
+        // Close other dropdowns
+        allDropdowns.forEach(menu => {
+          if (menu !== dropdown) menu.style.display = 'none';
+        });
+
+        // Toggle the current dropdown
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function (event) {
+        if (!event.target.closest('.card-actions-dropdown')) {
+          document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+          });
+        }
+      });
+
+
+      let currentImageIndex = 0;
+      let currentImageList = [];
+
+      function openImageModal(clickedUrl, startIndex = 0) {
+        currentImageList = clickedUrl.split('|');
+        currentImageIndex = startIndex;
+
+        showImage(currentImageIndex);
+        document.getElementById('imageModal').style.display = 'flex';
+        document.body.classList.add('modal-open');
+      }
+
+
+      function showImage(index) {
+        const modalImg = document.getElementById('modalImage');
+        modalImg.src = currentImageList[index];
+      }
+
+      document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('imageModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+      });
+
+      document.getElementById('prevImage').addEventListener('click', () => {
+        if (currentImageIndex > 0) {
+          currentImageIndex--;
+          showImage(currentImageIndex);
+        }
+      });
+
+      document.getElementById('nextImage').addEventListener('click', () => {
+        if (currentImageIndex < currentImageList.length - 1) {
+          currentImageIndex++;
+          showImage(currentImageIndex);
+        }
+      });
+
+      document.getElementById('imageModal').addEventListener('click', (e) => {
+        if (e.target.id === 'imageModal') {
+          document.getElementById('imageModal').style.display = 'none';
+          document.body.classList.remove('modal-open');
+
+        }
+      });
+
+
+
+
+      async function addItem(event) {
+        event.preventDefault();
+        const item = {
+          name: document.getElementById('name').value,
+          description: document.getElementById('description').value,
+          acquisition_date: document.getElementById('acquisition_date').value,
+          cost: document.getElementById('cost').value,
+          origin: document.getElementById('origin').value,
+          documents: document.getElementById('documents').value,
+          brand: document.getElementById('brand').value,
+          model: document.getElementById('model').value,
+          photos: document.getElementById('photos').value,
+          type: document.getElementById('type').value
+        };
+
+        await fetch('/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+
+        document.getElementById('addItemForm').reset();
+        switchTab('search');
+        fetchItems();
+      }
+
+
+
+
+      let itemIdToDelete = null;
+
+      function deleteItem(id) {
+        itemIdToDelete = id;
+        document.getElementById('deleteModal').style.display = 'flex';
+        document.body.classList.add('modal-open');
+
+      }
+
+      document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+        if (itemIdToDelete !== null) {
+          await fetch(`/items/${itemIdToDelete}`, { method: 'DELETE' });
+          fetchItems();
+          itemIdToDelete = null;
+        }
+        document.getElementById('deleteModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+      });
+
+      document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+        itemIdToDelete = null;
+        document.getElementById('deleteModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+      });
+
+      // Open the Edit Modal with item data
+      function createImageThumbnail(url, container) {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.style.width = '60px';
+        img.style.height = 'auto';
+        img.style.borderRadius = '4px';
+        img.style.border = '1px solid #ccc';
+
+        const removeBtn = document.createElement('span');
+        removeBtn.innerHTML = '&times;';
+        removeBtn.style.position = 'absolute';
+        removeBtn.style.top = '-8px';
+        removeBtn.style.right = '-8px';
+        removeBtn.style.background = '#f00';
+        removeBtn.style.color = '#fff';
+        removeBtn.style.padding = '0 5px';
+        removeBtn.style.cursor = 'pointer';
+        removeBtn.style.borderRadius = '50%';
+        removeBtn.style.fontSize = '14px';
+
+        removeBtn.onclick = () => {
+          container.removeChild(wrapper);
+        };
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+      }
+
+      async function editItem(id) {
+        const response = await fetch(`/items/${id}`);
+        const item = await response.json();
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-name').value = item.name;
+        document.getElementById('edit-description').value = item.description;
+
+        if (item.acquisition_date) {
+          const date = new Date(item.acquisition_date);
+          const formatted = date.getFullYear() + '-' +
+            String(date.getMonth() + 1).padStart(2, '0') + '-' +
+            String(date.getDate()).padStart(2, '0');
+          document.getElementById('edit-acquisition_date').value = formatted;
+        } else {
+          document.getElementById('edit-acquisition_date').value = '';
+        }
+
+        document.getElementById('edit-documents').value = '';
+        document.getElementById('edit-cost').value = item.cost || '';
+        document.getElementById('edit-origin').value = item.origin || '';
+        document.getElementById('edit-brand').value = item.brand || '';
+        document.getElementById('edit-model').value = item.model || '';
+        document.getElementById('edit-photos').value = '';
+        document.getElementById('edit-links').value = item.links
+          ? JSON.parse(item.links).join('\n')
+          : '';
+
+        document.getElementById('edit-type').value = item.type || 'private';
+
+        // Handle photos
+        const photoPreview = document.getElementById('edit-photo-preview');
+        photoPreview.innerHTML = '';
+        if (item.photos) {
+          item.photos.split(',').forEach(url => {
+            if (url.trim()) createImageThumbnail(url.trim(), photoPreview);
+          });
+        }
+
+        // Handle documents
+        const docPreview = document.getElementById('edit-documents-preview');
+        docPreview.innerHTML = '';
+        if (item.documents) {
+          item.documents.split(',').forEach(url => {
+            const trimmed = url.trim();
+            const fileName = trimmed.split('/').pop();
+            const fileNameSimple = trimmed.split('___').pop();
+
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '5px';
+
+            const link = document.createElement('a');
+            link.href = trimmed;
+            link.textContent = fileNameSimple;
+            link.target = '_blank';
+
+            const removeBtn = document.createElement('span');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.style.marginLeft = '10px';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.style.color = 'red';
+            removeBtn.onclick = () => {
+              docPreview.removeChild(wrapper);
+            };
+
+            wrapper.appendChild(link);
+            wrapper.appendChild(removeBtn);
+            docPreview.appendChild(wrapper);
+          });
+        }
+
+        document.getElementById('editModal').style.display = 'flex';
+        document.body.classList.add('modal-open');
+      }
+
+
+      // Submit edited data
+      document.getElementById('editItemForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('edit-id').value;
+        const formData = new FormData();
+        formData.append('name', document.getElementById('edit-name').value);
+        formData.append('description', document.getElementById('edit-description').value);
+        formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
+        formData.append('cost', document.getElementById('edit-cost').value);
+        formData.append('origin', document.getElementById('edit-origin').value);
+        formData.append('brand', document.getElementById('edit-brand').value);
+        formData.append('model', document.getElementById('edit-model').value);
+        const rawLinks = document.getElementById('edit-links').value
+          .split('\n')
+          .map(link => link.trim())
+          .filter(link => link.length > 0);
+        formData.append('links', JSON.stringify(rawLinks));
+
+        formData.append('type', document.getElementById('edit-type').value);
+
+        const photoPreview = document.getElementById('edit-photo-preview');
+        const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
+        const existingPhotos = photoThumbs.map(img => decodeURIComponent(new URL(img.src).pathname));
+
+        formData.append('existingPhotos', JSON.stringify(existingPhotos));
+
+        const newPhotos = document.getElementById('edit-photos').files;
+        for (let i = 0; i < newPhotos.length; i++) {
+          formData.append('photos', newPhotos[i]);
+        }
+
+        const docPreview = document.getElementById('edit-documents-preview');
+        const docLinks = Array.from(docPreview.getElementsByTagName('a'));
+        //const existingDocs = docLinks.map(link => link.href);
+        const existingDocs = docLinks.map(link => decodeURIComponent(new URL(link.href).pathname));
+
+        formData.append('existingDocuments', JSON.stringify(existingDocs));
+
+        const newDocs = document.getElementById('edit-documents').files;
+        for (let i = 0; i < newDocs.length; i++) {
+          formData.append('documents', newDocs[i]);
+        }
+
+        await fetch(`/items/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
+
+        document.getElementById('editModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+        fetchItems();
+        window.location.href = '/index';
+
+      });
+      document.getElementById('edit-photos').addEventListener('change', function () {
+        const previewContainer = document.getElementById('edit-photos-preview');
+        previewContainer.innerHTML = '';
+
+        Array.from(this.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '60px';
+            img.style.borderRadius = '4px';
+            img.style.border = '1px solid #ccc';
+            previewContainer.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+
+
+      // Cancelar edit
+      document.getElementById('cancelEditBtn').addEventListener('click', () => {
+        document.getElementById('editModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+      });
+
+
+
+      async function loadUserInfo() {
+        const response = await fetch('/user');
+        const data = await response.json();
+        if (data.username) {
+          document.getElementById('usernameDisplay').innerText = `${data.username}`;
+        }
+      }
+      async function loadUserData() {
+        try {
+          const response = await fetch('/user/profile-data');
+          const data = await response.json();
+          if (data.username) {
+            const profileImageUrl = data.profile_image
+            document.getElementById('profileImg').src = profileImageUrl;
+
+          }
+        } catch (err) {
+          console.error('Failed to load user data:', err);
+        }
+      }
+
+      document.getElementById('search').addEventListener('input', fetchItems);
+      document.getElementById('searchField').addEventListener('change', fetchItems);
+
+      // Initialize
+      loadUserInfo();
+      loadUserData();
+      fetchItems();
+    </script>
+
+</body>
+
+</html>

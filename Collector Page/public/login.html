@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="/public/style.css" />
+</head>
+
+<body>
+
+  <!-- Top Banner -->
+
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+    <nav class="nav-menu">
+      <a href="/">Início</a>
+    </nav>
+
+    <nav class="nav-menu">
+      <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
+    </nav>
+
+
+  </header>
+
+  <!-- Login Form -->
+  <div class="login-form">
+    <h1>Login</h1>
+    <form id="loginForm">
+      <div class="user-container">
+        <input type="text" id="username" placeholder="Username" required />
+      </div>
+      <div class="password-container">
+        <input type="password" id="password" placeholder="Password" required />
+        <span id="togglePassword" class="toggle-password">☐</span> <!-- Eye icon -->
+      </div>
+      <button type="submit">Login</button>
+    </form>
+    <p>Ainda não tem um conta? <a href="/register" class="btn-user-page">Registar aqui</a></p>
+    <p><a href="/forgot-password" class="btn-user-page">Esqueceu se da password?</a></p>
+
+  </div>
+
+  <script>
+    async function login(event) {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        window.location.href = '/';
+      } else {
+        alert('Login failed');
+      }
+    }
+
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+
+    togglePassword.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      togglePassword.textContent = type === 'password' ? '☐' : '☑'; // Optional: swap icons
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', login);
+
+  </script>
+
+</body>
+
+</html>

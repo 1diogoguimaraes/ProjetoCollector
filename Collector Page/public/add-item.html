@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Collection</title>
+  <link rel="icon" type="image/x-icon" href="/public/images/logo-title.png" />
+  <link rel="stylesheet" href="/public/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <p>De certeza que quer fazer sair ?</p>
+      <div class="modal-buttons">
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+
+    <div> <button id="menuToggleBtn">Menu</button>
+
+      <nav class="nav-menu">
+
+        <a href="/">Início</a>
+        <a href="/index" id="searchTab">Items</a>
+        <a href="/add-item" id="addItemTab" class="active">Adicionar</a> <!-- updated -->
+        <a href="/forum">Forum</a>
+
+      </nav>
+    </div>
+    <div class="user-profile">
+
+      <div class="profile-dropdown">
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
+        <div class="profile-dropdown-menu" id="profileDropdown">
+          <div id="usernameDisplay" class="dropdown-username"></div>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
+          <a href="#" id="logoutBtnDropdown">Logout</a>
+        </div>
+      </div>
+
+  </header>
+
+  <div class="container">
+    <h2>Adicionar Item Novo</h2>
+    <form id="addItemForm">
+      <div class="form-group">
+        <label for="name">Nome Item</label>
+        <input type="text" id="name" placeholder="Nome Item" required />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Descrição</label>
+        <input type="text" id="description" placeholder="Descrição" required />
+      </div>
+
+      <div class="form-group">
+        <label for="acquisition_date">Data de Aquisição</label>
+        <input type="date" id="acquisition_date" placeholder="Data de Aquisição" required />
+      </div>
+
+      <div class="form-group">
+        <label for="cost">Custo do Item</label>
+        <input type="number" id="cost" placeholder="Custo " step="0.01" min="0">
+      </div>
+
+      <div class="form-group">
+        <label for="origin">Origem</label>
+        <input type="text" id="origin" placeholder="Origem">
+      </div>
+
+      <div class="form-group">
+        <label for="documents">Carregar Documentos</label>
+        <input type="file" id="documents" name="documents" multiple
+          accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
+      </div>
+      <div class="form-group">
+        <label for="links">Links Relacionados</label>
+        <textarea id="links" name="links" rows="3" placeholder="Enter one URL per line"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="brand">Marca</label>
+        <input type="text" id="brand" placeholder="Marca">
+      </div>
+      <div class="form-group">
+        <label for="model">Modelo</label>
+        <input type="text" id="model" placeholder="Modelo">
+      </div>
+      <div class="form-group">
+        <label for="photos">Carregar Fotos</label>
+        <input type="file" id="photos" name="photos" multiple accept="image/*">
+      </div>
+      <div class="form-group">
+        <label for="type">Tipo de Coleção</label>
+        <select id="type">
+          <option value="private">Private</option>
+          <option value="public">Public</option>
+        </select>
+      </div>
+      <button type="submit">Adicionar Item</button>
+    </form>
+    <div id="formMessage" class="form-message" style="color: red; margin-top: 10px;"></div>
+
+  </div>
+
+  <script src="public/js/utils.js"></script>
+
+  <script>
+
+
+
+
+
+    async function loadUserInfo() {
+      const response = await fetch('/user');
+      const data = await response.json();
+      if (data.username) {
+        document.getElementById('usernameDisplay').innerText = `${data.username}`;
+      }
+    }
+    async function loadUserData() {
+      try {
+        const response = await fetch('/user/profile-data');
+        const data = await response.json();
+        if (data.username) {
+          const profileImageUrl = data.profile_image
+          document.getElementById('profileImg').src = profileImageUrl;
+
+        }
+      } catch (err) {
+        console.error('Failed to load user data:', err);
+      }
+    }
+
+    async function addItem(event) {
+      event.preventDefault();
+
+
+      const formData = new FormData();
+      formData.append('name', document.getElementById('name').value.trim());
+      formData.append('description', document.getElementById('description').value.trim());
+      /*       formData.append('acquisition_date', document.getElementById('acquisition_date').value);
+       */
+      const rawDate = document.getElementById('acquisition_date').value;
+      const formattedDate = new Date(rawDate).toISOString().split('T').shift();
+      formData.append('acquisition_date', formattedDate);
+
+
+      formData.append('cost', document.getElementById('cost').value);
+      formData.append('origin', document.getElementById('origin').value.trim());
+      formData.append('brand', document.getElementById('brand').value.trim());
+      formData.append('model', document.getElementById('model').value.trim());
+      formData.append('type', document.getElementById('type').value);
+
+      const linksRaw = document.getElementById('links').value.trim();
+      const linksArray = linksRaw.split('\n').map(link => link.trim()).filter(link => link);
+      formData.append('links', JSON.stringify(linksArray)); // Send as JSON string
+
+
+      const photos = document.getElementById('photos').files;
+      for (let i = 0; i < photos.length; i++) {
+        formData.append('photos', photos[i]);
+      }
+      const documents = document.getElementById('documents').files;
+      for (let i = 0; i < documents.length; i++) {
+        formData.append('documents', documents[i]);
+      }
+
+
+      const response = await fetch('/items', {
+        method: 'POST',
+        body: formData
+      });
+
+      const messageDiv = document.getElementById('formMessage');
+      if (response.ok) {
+        messageDiv.textContent = '✅ Item added successfully!';
+        messageDiv.style.color = 'green';
+        document.getElementById('addItemForm').reset();
+        setTimeout(() => {
+          window.location.href = '/index';
+        }, 2);
+      } else {
+        messageDiv.textContent = '❌ Failed to add item.';
+        messageDiv.style.color = 'red';
+      }
+      for (const value of formData.values()) {
+        console.log(value);
+      }
+    }
+
+
+
+
+    document.getElementById('addItemForm').addEventListener('submit', addItem);
+    loadUserInfo();
+    loadUserData();
+  </script>
+</body>
+
+</html>

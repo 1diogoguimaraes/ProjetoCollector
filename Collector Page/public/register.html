@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register</title>
+  <link rel="stylesheet" href="/public/style.css" />
+</head>
+
+<body>
+
+
+
+  <!-- Header Nav -->
+  <header class="site-header">
+    <a href="/" class="logo">
+      <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
+    </a>
+    <nav class="nav-menu">
+      <!--       <a href="#">Início</a>
+      <a href="/login">Login</a> -->
+    </nav>
+    <nav class="nav-menu">
+      <button onclick="location.href='/login'" id="loginBtn" style="display: flex;">Login</button>
+    </nav>
+  </header>
+
+  <!-- Register Form -->
+  <div class="login-form">
+    <h1>Register</h1>
+    <form id="registerForm">
+      <input type="text" id="username" placeholder="Username" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+      <input type="text" id="email" placeholder="Email" required>
+
+      <button type="submit" id="registerButton">Register</button>
+    </form>
+    <p>Já tem uma conta? <a href="/login" class="btn-user-page">Login aqui</a></p>
+  </div>
+
+  <!-- Script -->
+  <script>
+    async function register(event) {
+      event.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const email = document.getElementById('email').value.trim();
+      const registerButton = document.getElementById('registerButton');
+
+      if (!username || !password || !confirmPassword || !email) {
+        alert("All fields are required.");
+        return;
+      }
+
+      if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+        alert("Username must be at least 3 characters and contain only letters, numbers, and underscores.");
+        return;
+      }
+
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(email)) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+      if (!passwordPattern.test(password)) {
+        alert("Password must be at least 6 characters long, with at least one uppercase letter, one lowercase letter, and one number.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+      }
+
+      registerButton.disabled = true;
+
+      try {
+        const response = await fetch('/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, email })
+        });
+
+        if (response.ok) {
+          alert("Registration successful!");
+          window.location.href = '/login';
+        } else {
+          const error = await response.text();
+          alert("Registration failed: " + error);
+        }
+      } catch (error) {
+        alert("An error occurred: " + error.message);
+      } finally {
+        registerButton.disabled = false;
+      }
+    }
+
+
+    document.getElementById('registerForm').addEventListener('submit', register);
+  </script>
+
+</body>
+
+</html>
