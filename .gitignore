@@ -3,6 +3,8 @@ node_modules/
 results/
 # Ignore environment files
 .env
+# Ignore uploads
+Collector Page/public/uploads
 
 # Ignore OS or editor-specific files
 .DS_Store

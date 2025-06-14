@@ -250,8 +250,10 @@ form select {
   border-radius: 6px;
   font-size: 14px;
 }
-
-.search-input {
+#searchForm {
+  display: none;
+}
+.search-input  {
   width: 20%;
   padding: 10px;
   margin: 6px 0;
@@ -308,13 +310,11 @@ thead {
 }
 
 thead th {
-  padding: 12px;
   font-size: 14px;
   text-align: left;
 }
 
 tbody td {
-  padding: 12px;
   border-bottom: 1px solid #dee2e6;
   font-size: 14px;
   vertical-align: top;

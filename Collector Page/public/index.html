@@ -17,10 +17,10 @@
 
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-      <p>Are you sure you want to logout?</p>
+      <p>De certeza que quer fazer sair ?</p>
       <div class="modal-buttons">
-        <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
-        <button id="cancelLogout" class="btn-cancel">Cancel</button>
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
       </div>
     </div>
   </div>
@@ -36,20 +36,20 @@
       <button id="menuToggleBtn">Menu</button>
 
       <nav class="nav-menu">
-        <a href="/">Home</a>
+        <a href="/">Início</a>
         <a href="/index" id="searchTab" class="active">Items</a>
-        <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
         <a href="/forum">Forum</a>
 
       </nav>
     </div>
     <div class="user-profile">
       <div class="profile-dropdown">
-        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
         <div class="profile-dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="/profile">Profile</a>
-          <a href="#">Settings</a>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
@@ -62,166 +62,158 @@
     <!-- Top Menu -->
     <!--     
     <nav class="menu">
-      <button id="searchTab" class="active">🔍 Search</button>
-      <button id="addItemTab">➕ Add Item</button>
+      <button id="searchTab" class="active">🔍 Procurar</button>
+      <button id="addItemTab">➕ Adicionar</button>
     </nav> -->
 
-    <!-- Search Section -->
+    <!-- Procurar Section -->
     <div id="searchSection" class="section active">
       <div>
         <select id="searchField">
-          <option value="name">Name</option>
-          <option value="description">Description</option>
-          <option value="brand">Brand</option>
-          <option value="model">Model</option>
-          <option value="origin">Origin</option>
+          <option value="name">Nome</option>
+          <option value="description">Descrição</option>
+          <option value="brand">Marca</option>
+          <option value="model">Modelo</option>
+          <option value="origin">Origem</option>
           <option value="item_code">ID</option>
 
         </select>
-        <button onclick="startQrScanner()">Search QR</button>
-        <div id="qr-reader" style="width: 300px;"></div>
 
-        <input class="search-input" type="text" id="search" placeholder="Search Collection">
-        <button onclick="handleSearch()">Search</button>
+
+        <input class="search-input" type="text" id="search" placeholder="Procurar Collection">
+        <button onclick="handleSearch()">Procurar</button>
 
         <select id="itemsPerPageSelector" onchange="changeItemsPerPage(this.value)">
-          <option value="6">6 per page</option>
-          <option value="12">12 per page</option>
-          <option value="24">24 per page</option>
-          <option value="100">100 per page</option>
+          <option value="6">6 por página</option>
+          <option value="12">12 por página</option>
+          <option value="24">24 por página</option>
+          <option value="100">100 por página</option>
         </select>
+        <button onclick="startQrScanner()">Procurar QR</button>
 
-        <button onclick="setViewMode('card')">Card View</button>
-        <button onclick="setViewMode('table')">Table View</button>
+        <button onclick="toggleSearchForm()">Pesquisa Avançada</button>
+
+        <button onclick="setViewMode('card')">Cartões</button>
+        <button onclick="setViewMode('table')">Tabela</button>
         <form id="searchForm" enctype="multipart/form-data">
           <input type="file" name="image" required />
-          <input type="number" step="0.01" name="threshold" placeholder="Similarity threshold (e.g., 0.8)" />
-          <button type="submit">Find Similar Items</button>
+
+          <label for="threshold">Similarity Threshold: <span id="thresholdValue">0.80</span></label>
+          <input type="range" name="threshold" id="threshold" min="0" max="1" step="0.01" value="0.8" />
+
+          <button type="submit">Procurar Items Semelhantes</button>
         </form>
 
         <div id="results"></div>
-
+        <div id="qr-reader" style="width: 300px;"></div>
 
 
       </div>
-      <!-- Card View Container -->
-      <div id="cardViewContainer" class="card-grid"></div>
 
-      <!-- Table View Container -->
-      <table id="tableViewContainer" border="1" cellpadding="8" cellspacing="0"
-        style="width: 100%; display: none; margin-top: 16px;">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Acquisition Date</th>
-            <th>Cost</th>
-            <th>Origin</th>
-            <th>Documents</th>
-            <th>Brand</th>
-            <th>Model</th>
-            <th>Photos</th>
-            <th>Links</th>
-            <th>Type</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+      <!-- Cartões Container -->
+      <div id="cardViewContainer" class="card-grid" style="position: relative;">
+      </div>
+
+      <!-- Tabela Container -->
+      <div id="tableWrapper" style="overflow-x: auto; width: 100%;">
+
+        <table id="tableViewContainer" border="1" cellpadding="8" cellspacing="0"
+          style="width: 100%; display: none; margin-top: 16px;">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Descrição</th>
+              <th>Data de Aquisição</th>
+              <th>Custo</th>
+              <th>Origem</th>
+              <th>Documentos</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Fotos</th>
+              <th>Links</th>
+              <th>Tipo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
 
       <div id="paginationControls" style="text-align: center;">
-        <button onclick="prevPage()">Previous</button>
-        <span id="pageInfo">Page 1</span>
-        <a href="/index#"><button onclick="nextPage()">Next</button></a>
+        <button onclick="prevPage()">Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <a href="/index#"><button onclick="nextPage()">Próxima</button></a>
       </div>
     </div>
 
 
-    <!-- Add Item Section -->
-    <div id="addItemSection" class="section">
-      <form id="addItemForm">
-        <input type="text" id="name" placeholder="Item Name" required>
-        <input type="text" id="description" placeholder="Description" required>
-        <input type="date" id="acquisition_date" placeholder="Acquisition Date">
-        <input type="number" id="cost" placeholder="Cost">
-        <input type="text" id="origin" placeholder="Origin">
-        <textarea id="documents" placeholder="Documents/Links"></textarea>
-        <input type="text" id="brand" placeholder="Brand">
-        <input type="text" id="model" placeholder="Model">
-        <input type="text" id="photos" placeholder="Photos/Links">
-        <select id="type">
-          <option value="private">Private</option>
-          <option value="public">Public</option>
-        </select>
-        <button type="submit">Add Item</button>
-      </form>
-    </div>
+
 
 
     <!-- Custom Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
       <div class="modal-content">
-        <p>Are you sure you want to delete this item?</p>
+        <p>De certeza que quer eliminar este item?</p>
         <div class="modal-buttons">
-          <button id="confirmDeleteBtn" class="btn-confirm">Yes, delete</button>
-          <button id="cancelDeleteBtn" class="btn-cancel">Cancel</button>
+          <button id="confirmDeleteBtn" class="btn-confirm">Sim, eliminar</button>
+          <button id="cancelDeleteBtn" class="btn-cancel">Cancelar</button>
         </div>
       </div>
     </div>
 
-    <!-- Edit Item Modal -->
+    <!-- Editer Item Modal -->
     <div id="editModal" class="modal">
       <div class="modal-content">
-        <h2>Edit Item</h2>
+        <h2>Editer Item</h2>
         <div class="modal-scroll">
           <form id="editItemForm">
             <input type="hidden" id="edit-id">
 
             <div class="form-group">
-              <label for="edit-name">Item Name</label>
-              <input type="text" id="edit-name" placeholder="Item Name" required>
+              <label for="edit-name">Nome Item</label>
+              <input type="text" id="edit-name" placeholder="Nome Item" required>
             </div>
 
             <div class="form-group">
-              <label for="edit-description">Description</label>
-              <input type="text" id="edit-description" placeholder="Description" required>
+              <label for="edit-description">Descrição</label>
+              <input type="text" id="edit-description" placeholder="Descrição" required>
             </div>
 
             <div class="form-group">
-              <label for="edit-acquisition_date">Acquisition Date</label>
-              <input type="date" id="edit-acquisition_date" placeholder="Acquisition Date">
+              <label for="edit-acquisition_date">Data de Aquisição</label>
+              <input type="date" id="edit-acquisition_date" placeholder="Data de Aquisição">
             </div>
 
             <div class="form-group">
-              <label for="edit-cost">Item Cost</label>
-              <input type="number" id="edit-cost" placeholder="Cost " step="0.01" min="0">
+              <label for="edit-cost">Custo do Item</label>
+              <input type="number" id="edit-cost" placeholder="Custo " step="0.01" min="0">
             </div>
 
             <div class="form-group">
-              <label for="edit-origin">Origin</label>
-              <input type="text" id="edit-origin" placeholder="Origin">
+              <label for="edit-origin">Origem</label>
+              <input type="text" id="edit-origin" placeholder="Origem">
             </div>
 
             <!-- Updated document input with preview -->
             <div class="form-group">
-              <label for="edit-documents">Upload Documents</label>
+              <label for="edit-documents">Carregar Documentos</label>
               <div id="edit-documents-preview" style="margin-bottom: 10px;"></div>
               <input type="file" id="edit-documents" name="documents" multiple
                 accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
             </div>
 
             <div class="form-group">
-              <label for="edit-brand">Item Brand</label>
-              <input type="text" id="edit-brand" placeholder="Brand">
+              <label for="edit-brand">Marca</label>
+              <input type="text" id="edit-brand" placeholder="Marca">
             </div>
 
             <div class="form-group">
-              <label for="edit-model">Item Model</label>
-              <input type="text" id="edit-model" placeholder="Model">
+              <label for="edit-model">Modelo</label>
+              <input type="text" id="edit-model" placeholder="Modelo">
             </div>
 
             <div class="form-group">
-              <label for="edit-photos">Upload Photos</label>
+              <label for="edit-photos">Carregar Fotos</label>
               <div id="edit-photo-preview" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
               </div>
               <input type="file" id="edit-photos" name="photos" multiple accept="image/*">
@@ -231,15 +223,15 @@
               <textarea id="edit-links" rows="4" placeholder="Enter one link per line"></textarea>
             </div>
             <div class="form-group">
-              <label for="edit-type">Collection Type</label>
+              <label for="edit-type">Tipo de Coleção</label>
               <select id="edit-type">
                 <option value="private">Private</option>
                 <option value="public">Public</option>
               </select>
             </div>
             <div class="modal-buttons">
-              <button type="submit" class="btn-confirm">Update</button>
-              <button type="button" id="cancelEditBtn" class="btn-cancel">Cancel</button>
+              <button type="submit" class="btn-confirm">Alterar</button>
+              <button type="button" id="cancelEditBtn" class="btn-cancel">Cancelar</button>
             </div>
 
           </form>
@@ -269,12 +261,29 @@
       </div>
     </div>
 
+
+
     <!-- Script -->
     <script src="public/js/utils.js"></script>
 
     <script>
+      const thresholdInput = document.getElementById('threshold');
+      const thresholdValue = document.getElementById('thresholdValue');
+
+      thresholdInput.addEventListener('input', () => {
+        thresholdValue.textContent = parseFloat(thresholdInput.value).toFixed(2);
+      });
       function startQrScanner() {
         const qrScanner = new Html5Qrcode("qr-reader");
+
+        const stopTimeout = setTimeout(() => {
+          qrScanner.stop().then(() => {
+            console.log("QR scanner stopped after timeout.");
+          }).catch((err) => {
+            console.error("Error stopping QR scanner:", err);
+          });
+        }, 20000); // 10000 ms = 10 seconds
+
         qrScanner.start(
           { facingMode: "environment" },
           {
@@ -282,6 +291,7 @@
             qrbox: 250
           },
           (decodedText) => {
+            clearTimeout(stopTimeout); // Stop the timer once QR is scanned
             qrScanner.stop();
 
             // Extract ID from the decoded URL
@@ -292,7 +302,6 @@
             // Set the search input and field
             document.getElementById('search').value = searchId;
             document.getElementById('searchField').value = field;
-            console.log(decodedText)
             // Trigger the search
             fetchItems();
           },
@@ -301,6 +310,13 @@
           }
         );
       }
+
+
+      function toggleSearchForm() {
+        const form = document.getElementById('searchForm');
+        form.style.display = form.style.display === 'none' || form.style.display === '' ? 'flex' : 'none';
+      }
+
 
       /////////////////////////////////////////////
 
@@ -373,27 +389,6 @@
 
 
 
-      // Tab Switching
-
-      const searchTab = document.getElementById('searchTab');
-      /* const addItemTab = document.getElementById('addItemTab'); */
-
-      const searchSection = document.getElementById('searchSection');
-      /* const addItemSection = document.getElementById('addItemSection'); */
-
-      function switchTab(tab) {
-        if (tab === 'search') {
-          searchSection.classList.add('active');
-          addItemSection.classList.remove('active');
-          searchTab.classList.add('active');
-          addItemTab.classList.remove('active');
-        } else {
-          searchSection.classList.remove('active');
-          addItemSection.classList.add('active');
-          searchTab.classList.remove('active');
-          addItemTab.classList.add('active');
-        }
-      }
 
       searchTab.addEventListener('click', () => switchTab('search'));
       addItemTab.addEventListener('click', () => switchTab('add'));
@@ -412,13 +407,22 @@
         const searchQuery = document.getElementById('search').value;
         const searchField = document.getElementById('searchField').value;
 
-        const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
-        const data = await response.json();
-        currentItems = data.items;
-        totalItems = data.total;
 
-        renderPage();
+
+
+        try {
+          const response = await fetch(`/items?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
+          const data = await response.json();
+          currentItems = data.items;
+          totalItems = data.total;
+          renderPage();
+        } catch (error) {
+          console.error('Failed to fetch items:', error);
+          alert('Error loading data.');
+        }
       }
+
+
       function renderPage() {
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
@@ -426,7 +430,7 @@
         // Update pagination info
         const pageInfo = document.getElementById('pageInfo');
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+        pageInfo.textContent = `Página ${currentPage} of ${totalPages}`;
 
         if (viewMode === 'card') {
           const cardContainer = document.getElementById('cardViewContainer');
@@ -490,7 +494,7 @@
             `;
                 })
                 .join('')
-              : '<p>No documents</p>';
+              : '<p>Sem Documentos</p>';
 
             card.innerHTML = `
 <div class="card-img">
@@ -551,7 +555,7 @@
                     </div>
                   `;
                   }).join('')
-                : 'No documents'
+                : 'Sem Documentos'
               }</td>
         <td>${item.brand || 'N/A'}</td>
         <td>${item.model || 'N/A'}</td>
@@ -563,7 +567,7 @@
                 : 'No images'}
         </td>
         <td>${item.links && item.links.length
-                ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="display:block;">${link}</a>`).join('')
+                ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="display:block;  word-break:break-word;">${link}</a>`).join('')
                 : 'No links'
               }</td>
         <td>${item.type || 'private'}</td>
@@ -620,7 +624,7 @@
             `;
             })
             .join('')
-          : '<p>No documents</p>';
+          : '<p>Sem Documentos</p>';
 
         const linksHTML = item.links && item.links.length
           ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
@@ -641,16 +645,16 @@
         <div style="flex: 1; max-height: 500px; overflow-y: auto; overflow-x: hidden; padding-right: 10px; box-sizing: border-box;">
 
           <h2>${item.name}</h2>
-          <p><strong>Description:</strong><br> ${item.description || 'N/A'}</p>
+          <p><strong>Descrição:</strong><br> ${item.description || 'N/A'}</p>
           <p><strong>Code:</strong><br> ${item.item_code || 'N/A'}</p>
           <p><strong>Date:</strong> ${item.acquisition_date?.split('T')[0] || 'N/A'}</p>
-          <p><strong>Cost:</strong> ${item.cost || 'N/A'}</p>
-          <p><strong>Origin:</strong> ${item.origin || 'N/A'}</p>
-          <p><strong>Brand:</strong> ${item.brand || 'N/A'}</p>
-          <p><strong>Model:</strong> ${item.model || 'N/A'}</p>
-          <p><strong>Type:</strong> ${item.type || 'private'}</p>
+          <p><strong>Custo:</strong> ${item.cost || 'N/A'}</p>
+          <p><strong>Origem:</strong> ${item.origin || 'N/A'}</p>
+          <p><strong>Marca:</strong> ${item.brand || 'N/A'}</p>
+          <p><strong>Modelo:</strong> ${item.model || 'N/A'}</p>
+          <p><strong>Tipo:</strong> ${item.type || 'private'}</p>
           <div><strong>Links:</strong><br>${linksHTML}</div>
-          <div><strong>Documents:</strong>${documentLinks}</div>
+          <div><strong>Documentos:</strong>${documentLinks}</div>
         </div>
       </div>
 
@@ -893,7 +897,6 @@
       async function editItem(id) {
         const response = await fetch(`/items/${id}`);
         const item = await response.json();
-        console.log(item)
         document.getElementById('edit-id').value = item.id;
         document.getElementById('edit-name').value = item.name;
         document.getElementById('edit-description').value = item.description;
@@ -989,7 +992,8 @@
 
         const photoPreview = document.getElementById('edit-photo-preview');
         const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
-        const existingPhotos = photoThumbs.map(img => img.src);
+        const existingPhotos = photoThumbs.map(img => decodeURIComponent(new URL(img.src).pathname));
+
         formData.append('existingPhotos', JSON.stringify(existingPhotos));
 
         const newPhotos = document.getElementById('edit-photos').files;
@@ -1001,7 +1005,6 @@
         const docLinks = Array.from(docPreview.getElementsByTagName('a'));
         //const existingDocs = docLinks.map(link => link.href);
         const existingDocs = docLinks.map(link => decodeURIComponent(new URL(link.href).pathname));
-        console.log(existingDocs)
 
         formData.append('existingDocuments', JSON.stringify(existingDocs));
 
@@ -1018,6 +1021,8 @@
         document.getElementById('editModal').style.display = 'none';
         document.body.classList.remove('modal-open');
         fetchItems();
+        window.location.href = '/index';
+
       });
       document.getElementById('edit-photos').addEventListener('change', function () {
         const previewContainer = document.getElementById('edit-photos-preview');
@@ -1039,7 +1044,7 @@
 
 
 
-      // Cancel edit
+      // Cancelar edit
       document.getElementById('cancelEditBtn').addEventListener('click', () => {
         document.getElementById('editModal').style.display = 'none';
         document.body.classList.remove('modal-open');
@@ -1060,7 +1065,6 @@
           const response = await fetch('/user/profile-data');
           const data = await response.json();
           if (data.username) {
-            console.log(data)
             const profileImageUrl = data.profile_image
             document.getElementById('profileImg').src = profileImageUrl;
 
@@ -1070,7 +1074,6 @@
         }
       }
 
-      document.getElementById('addItemForm').addEventListener('submit', addItem);
       document.getElementById('search').addEventListener('input', fetchItems);
       document.getElementById('searchField').addEventListener('change', fetchItems);
 

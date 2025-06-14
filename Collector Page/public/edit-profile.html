@@ -18,9 +18,9 @@
       <button id="menuToggleBtn">Menu</button>
 
       <nav class="nav-menu">
-        <a href="/" class="active">Home</a>
+        <a href="/" class="active">Início</a>
         <a href="/index" id="searchTab">Items</a>
-        <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
         <a href="/forum">Forum</a>
       </nav>
     </div>
@@ -30,31 +30,31 @@
 
     <div class="user-profile">
       <div class="profile-dropdown">
-        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
         <div class="profile-dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="/profile">Profile</a>
-          <a href="#">Settings</a>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
   </header>
   <div class="container edit-profile-container">
-    <h1>Edit Your Profile</h1>
+    <h1>Edit Perfil</h1>
     <form id="editProfileForm" enctype="multipart/form-data">
       <div class="form-group">
-        <label for="email">New Email</label>
+        <label for="email">Novo Email</label>
         <input type="email" id="email" name="email" required />
       </div>
 
       <div class="form-group">
-        <label for="profileImage">Profile Picture</label>
+        <label for="profileImage">Perfil Imagem</label>
         <input type="file" id="profileImage" name="profileImage" accept="image/*" />
       </div>
 
-      <button type="submit" class="btn-save">Save Changes</button>
+      <button type="submit" class="btn-save">Guardar Alterações</button>
     </form>
-    <a href="/profile" class="btn-back">Cancel</a>
+    <a href="/profile" class="btn-back">Cancelar</a>
   </div>
 
   <script src="public/js/utils.js"></script>
@@ -81,7 +81,7 @@
       });
 
       if (response.ok) {
-        alert('Profile updated!');
+        alert('Perfil updated!');
         window.location.href = '/profile';
       } else {
         alert('Failed to update profile.');

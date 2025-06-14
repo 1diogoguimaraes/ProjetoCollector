@@ -18,6 +18,8 @@ ${ITEMS_TAB}    searchTab
 @{WORDS}           Mesa    Relogio    Caneca    Sapato    Carro    Máquina de Escrever    Vaso    Telefone    Rádio
 @{DESCRIPTIONS}    Em bom estado com poucas marcas de uso    Funciona bem mas não deve ser constantemente usado. Guardar em local escuro    Serve só para exposição    Artigo delicado, não mexer
 
+@{LINKS}    https://stackoverflow.com/questions    https://www.facebook.com/    https://www.youtube.com/
+
 @{ORIGINS}    Colega    Feira Fundão    Porto    Alemanha    America    Covilhã    Amigo
 @{VALUES}           100    300    1200    54    12341    11221
 @{BRANDS}    Casio    Rollwatch    Mermeid    Midas    Macro    Bells    Prot    Dask
@@ -27,13 +29,21 @@ ${ITEMS_TAB}    searchTab
 ${ROOT_DIR}       ${CURDIR}${/}test_files
 ${DOC_DIR}        ${ROOT_DIR}${/}documents
 ${PHOTO_DIR}      ${ROOT_DIR}${/}photos
+
+${count_item}    0
 *** Test Cases ***
 
 Insert Items BD
+    Set Selenium Timeout    20 seconds
+
     Open website collector
+
     FOR    ${index}    IN RANGE    ${ITEMS_NUMBER}
         Change Tab    ${ADD_ITEM_TAB}
         Insert Data
+        ${count_item}=    Evaluate    ${count_item}+1
+        Log To Console    ${count_item}
+        Log To Console    ------------------------------
     END
 
     [Teardown]    Close Browser
@@ -52,7 +62,7 @@ Open website collector
     Open Browser    ${LOCALHOST_URL}    ${BROWSER}
     Click Element    loginBtn
     Wait Until Element Is Visible    username
-    Input Text    username    pop
+    Input Text    username    pop1
     Input Password    password    Password.123456
     Click Button    //form/button
 
@@ -62,7 +72,7 @@ Change Tab
     Click Element     ${CHANGE_TAB}
     
 Insert Data
-    Wait Until Element Is Visible    name    timeout=60
+    Wait Until Element Is Visible    name    timeout=120
 
         # Fill text fields with random words
     ${random_index}=    Evaluate    random.randint(0, len(${WORDS}) - 1)    modules=random
@@ -75,7 +85,7 @@ Insert Data
 
     ${random_date}=    Evaluate    (__import__('datetime').date(random.randint(1800, 2024), random.randint(1, 12), random.randint(1, 28))).strftime('%d-%m-%Y')    modules=random
     Input Text         id=acquisition_date    ${random_date}
-    Log To Console    ${random_date}
+
     ${random_index}=    Evaluate    random.randint(0, len(${VALUES}) - 1)    modules=random
     ${cost}=        Get From List    ${VALUES}    ${random_index}
     Input Text          id=cost     ${cost}
@@ -89,6 +99,9 @@ Insert Data
     Run Keyword If    ${upload_docs}    Upload Random Documents
 
 
+    ${random_index}=    Evaluate    random.randint(0, len(${LINKS}) - 1)    modules=random
+    ${links}=        Get From List    ${LINKS}    ${random_index}
+    Input Text          id=links     ${links}
 
 
     ${random_index}=    Evaluate    random.randint(0, len(${BRANDS}) - 1)    modules=random
@@ -101,7 +114,7 @@ Insert Data
 
 
     ${upload_photos}=    Evaluate    random.random() > 0.15    modules=random
-    Run Keyword If    ${upload_photos}    Upload Random Photos
+    Run Keyword If    ${upload_photos}    Upload Random Fotos
 
 
 
@@ -111,8 +124,10 @@ Insert Data
     Select From List By Value    id=type    ${visibility}
 
 
-
-    Click Button    Add Item
+    Scroll Element Into View    //*[@id="addItemForm"]/button
+    Sleep    1
+    Click Button    //*[@id="addItemForm"]/button
+    Log To Console    '${name}, ${description}, ${random_date}, ${cost}, ${origin}, ${upload_docs},${links}, ${brand}, ${model}, ${upload_photos}, ${visibility}' 
     Sleep    20
     ##Wait Until Element Is Visible   //div[@id="formMessage" and contains(text(), "Item added successfully")]
 
@@ -125,7 +140,7 @@ Delete Data
         IF    ${delete_buttons_vis}
             Click Element    (//button[contains(@onclick, 'delete')])[1]
             Wait Until Element Is Visible    confirmDeleteBtn
-            Click Button    Yes, delete
+            Click Button    Sim, eliminar
             Sleep    0.5
         ELSE
             Exit For Loop
@@ -146,7 +161,7 @@ Upload Random Documents
     ${doc_paths}=    Catenate    SEPARATOR=\n    @{selected_docs}
     Choose File       id=documents    ${doc_paths}
 
-Upload Random Photos
+Upload Random Fotos
     ${photo_files}=     List Files In Directory    ${PHOTO_DIR}
     ${num_photos}=      Evaluate    random.randint(1, 3)    modules=random
     ${selected_photos}=    Create List

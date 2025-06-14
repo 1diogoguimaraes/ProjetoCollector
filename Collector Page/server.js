@@ -24,6 +24,7 @@ const jpeg = require('jpeg-js');
 
 
 
+
 require('dotenv').config();
 
 let modelPromise = mobilenet.load();
@@ -53,7 +54,7 @@ const db = mysql.createConnection({
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    port: 3307
+    port: process.env.DB_PORT
 });
 
 db.connect((err) => {
@@ -144,7 +145,7 @@ const profileImageStorage = multer.diskStorage({
 
 const profileUpload = multer({ storage: profileImageStorage });
 
-
+app.set('trust proxy', true);
 ///////////////
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -198,7 +199,7 @@ app.get('/home', (req, res) => {
 // Forgot Password (store token in DB)
 app.post('/forgot-password', async (req, res) => {
     const { value } = req.body;
-    const host = req.headers.host;
+    const host = req.get('host');
     const protocol = req.protocol;
 
     db.query('SELECT * FROM users WHERE username = ? OR email = ?', [value, value], async (err, results) => {
@@ -219,13 +220,32 @@ app.post('/forgot-password', async (req, res) => {
                 const mailOptions = {
                     from: `My Collector <${process.env.EMAIL_USER}>`,
                     to: user.email,
-                    subject: 'Password Reset Link - My Collector',
-                    html: `<p>Hi ${user.username},</p>
-<p>You requested a password reset. Click the button below:</p>
-<p><a href="${resetLink}" style="background: #007BFF; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
-<p>If you didn’t request this, just ignore this email.</p>
-`,
+                    subject: 'Reset Your Password - My Collector',
+                    html: `
+                        <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+                            <p>Dear ${user.username},</p>
+                
+                            <p>We received a request to reset your password for your My Collector account. If you made this request, please click the button below to set a new password:</p>
+                
+                            <p style="text-align: center; margin: 20px 0;">
+                                <a href="${resetLink}" 
+                                   style="background-color: #007BFF; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                                   Reset Your Password
+                                </a>
+                            </p>
+                
+                            <p>This password reset link will expire in 1 hour. If you did not request a password reset, please ignore this message. Your account will remain secure.</p>
+                
+                            <p>Thank you,<br/>The My Collector Team</p>
+                
+                            <hr style="margin-top: 30px; border: none; border-top: 1px solid #ccc;" />
+                            <small style="color: #999;">This email was sent automatically. Please do not reply directly to this message.</small>
+                        </div>
+                    `,
+                    text: `Dear ${user.username},\n\nWe received a request to reset your password. Click the link below to reset it:\n\n${resetLink}\n\nThis link will expire in 1 hour.`,
+
                 };
+
 
                 try {
                     const transporter = await createTransporter();
@@ -235,7 +255,8 @@ app.post('/forgot-password', async (req, res) => {
                     console.error('Error sending email:', error);
                     res.status(500).send('Error sending email');
                 }
-            }
+/*                 console.log(resetLink)
+ */            }
         );
     });
 });
@@ -279,9 +300,14 @@ app.post('/reset-password/:token', (req, res) => {
             db.query('UPDATE users SET password = ? WHERE username = ?', [hashedPassword, username], (err) => {
                 if (err) return res.status(500).send('Error updating password');
 
-                db.query('DELETE FROM password_resets WHERE token = ?', [token]);
-                res.send('Password successfully reset');
+                db.query('DELETE FROM password_resets WHERE token = ?', [token], (err) => {
+                    if (err) return res.status(500).send('Error cleaning up reset token');
+
+                    res.send('Password successfully reset');
+                });
             });
+
+
         });
     });
 });
@@ -291,6 +317,28 @@ app.post('/reset-password/:token', (req, res) => {
 // Register API
 app.post('/register', profileUpload.single('profileImage'), (req, res) => {
     const { username, password, email } = req.body;
+
+
+    const usernamePattern = /^[a-zA-Z0-9_]{3,}$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+
+    if (!username || !email || !password) {
+        return res.status(400).send('All fields are required');
+    }
+
+    if (!usernamePattern.test(username)) {
+        return res.status(400).send('Username must be at least 3 characters and contain only letters, numbers, and underscores');
+    }
+
+    if (!emailPattern.test(email)) {
+        return res.status(400).send('Invalid email format');
+    }
+
+    if (!passwordPattern.test(password)) {
+        return res.status(400).send('Password must be at least 6 characters, include one uppercase letter, one lowercase letter, and one number');
+    }
+
 
     if (!password || password.length < 6) {
         return res.status(400).send('Password must be at least 6 characters long');
@@ -497,11 +545,11 @@ app.post('/user/update-profile', isLoggedIn, profileUpload.single('profileImage'
 // Generate QR Code for item ID
 app.get('/items/:id/qrcode', isLoggedIn, (req, res) => {
     const itemId = req.params.id;
-    const host = req.headers.host;
+    const host = req.get('host');
     const protocol = req.protocol;
     const itemUrl = `${protocol}://${host}/items?search=${itemId}&field=item_code`;
-
-    QRCode.toDataURL(itemUrl, (err, url) => {
+/*     console.log(itemUrl)
+ */    QRCode.toDataURL(itemUrl, (err, url) => {
         if (err) {
             console.error('QR generation failed:', err);
             return res.status(500).send('QR generation failed');
@@ -551,8 +599,8 @@ app.post('/items', isLoggedIn, upload.fields([
                 return res.status(500).send('Error updating item_code');
             }
 
-            console.log('Inserted item with code:', itemCode);
-            res.status(200).send('Item added successfully with item_code');
+/*             console.log('Inserted item with code:', itemCode);
+ */            res.status(200).send('Item added successfully with item_code');
         });
 
         ///////////////////////IMAGE VECTOR////////////////////////
@@ -638,7 +686,7 @@ app.post('/search-similar', searchUpload.single('image'), async (req, res) => {
     } finally {
         if (req.file && req.file.path) {
             const filePath = req.file.path;
-            console.log('Scheduled deletion for:', filePath);
+            /* console.log('Scheduled deletion for:', filePath); */
 
             setTimeout(() => {
                 fsPromise.unlink(filePath)
@@ -766,19 +814,31 @@ app.get('/items/:id', isLoggedIn, (req, res) => {
 
 
 // Update an item
-
 app.put('/items/:id', isLoggedIn, upload.fields([
     { name: 'photos', maxCount: 10 },
     { name: 'documents', maxCount: 10 }
-]), (req, res) => {
+]), async (req, res) => {
     const itemId = req.params.id;
+    const userId = req.session.userId;
     const updatedItem = req.body;
 
-    const existingPhotos = req.body.existingPhotos ? JSON.parse(req.body.existingPhotos) : [];
+    // Ensure existingPhotos already have full paths
+    let existingPhotos = [];
+    try {
+        existingPhotos = JSON.parse(req.body.existingPhotos || '[]');
+    } catch (e) {
+        console.error('Invalid JSON for existingPhotos', e);
+    }
+
+    // Only new uploaded files should be mapped to their public paths
     const newPhotos = (req.files.photos || []).map(file => `/public/uploads/photos/${file.filename}`);
+
+    // Merge cleanly
     const allPhotos = [...existingPhotos, ...newPhotos];
 
-    //const existingDocuments = req.body.existingDocuments ? JSON.parse(req.body.existingDocuments) : [];
+
+
+
     let existingDocuments = [];
     try {
         existingDocuments = JSON.parse(req.body.existingDocuments || '[]');
@@ -786,49 +846,96 @@ app.put('/items/:id', isLoggedIn, upload.fields([
         console.error('Invalid JSON for existingDocuments', e);
     }
     const newDocuments = (req.files.documents || []).map(file => `/public/uploads/documents/${file.filename}`);
-    //const allDocuments = [...existingDocuments, ...newDocuments];
     const allDocuments = Array.from(new Set([...existingDocuments, ...newDocuments]));
 
-
-    const query = `
-UPDATE items 
-SET 
-  name = ?, 
-  description = ?, 
-  acquisition_date = ?, 
-  cost = ?, 
-  origin = ?, 
-  documents = ?, 
-  brand = ?, 
-  model = ?, 
-  photos = ?, 
-  type = ?, 
-  links = ?
-      WHERE id = ? AND user_id = ?
-    `;
-    const values = [
-        updatedItem.name,
-        updatedItem.description,
-        updatedItem.acquisition_date,
-        updatedItem.cost,
-        updatedItem.origin,
-        allDocuments.join(','),
-        updatedItem.brand,
-        updatedItem.model,
-        allPhotos.join(','),
-        updatedItem.type,
-        updatedItem.links || [],
-        itemId,
-        req.session.userId
-    ];
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            console.error('Error updating item:', err);
-            return res.status(500).send('Error updating item');
+    // Step 1: Fetch current photo list from DB
+    db.query('SELECT photos FROM items WHERE id = ?', [itemId], async (fetchErr, results) => {
+        if (fetchErr || results.length === 0) {
+            console.error('Fetch error or item not found:', fetchErr);
+            return res.status(500).send('Failed to fetch item');
         }
 
-        res.json({ message: 'Item updated successfully', item: updatedItem });
+        const originalPhotos = results[0].photos ? results[0].photos.split(',') : [];
+
+        // Step 2: Determine photo differences
+        const removedPhotos = originalPhotos.filter(p => !allPhotos.includes(p));
+        const addedPhotos = allPhotos.filter(p => !originalPhotos.includes(p));
+
+        // Step 3: Delete removed photo vectors
+        if (removedPhotos.length > 0) {
+            const placeholders = removedPhotos.map(() => '?').join(',');
+            const deleteQuery = `DELETE FROM image_vectors WHERE photo_path IN (${placeholders}) AND item_id = ?`;
+            db.query(deleteQuery, [...removedPhotos, itemId], (delErr) => {
+                if (delErr) console.error('Vector deletion error:', delErr);
+            });
+        }
+
+        // Step 4: Add vectors for newly added photos
+        for (const photoPath of addedPhotos) {
+            const filename = path.basename(photoPath);
+            const fullPath = path.join(__dirname, 'public/uploads/photos', filename);
+            try {
+                const vector = await extractVector(fullPath); // Replace with your implementation
+                const insertVecQuery = `
+                    INSERT INTO image_vectors (user_id, item_id, photo_path, model, vector)
+                    VALUES (?, ?, ?, ?, ?)
+                `;
+                await new Promise((resolve, reject) => {
+                    db.query(insertVecQuery, [userId, itemId, photoPath, 'MobileNet', JSON.stringify(vector)], (vecErr) => {
+                        if (vecErr) {
+                            console.error('Insert vector error:', vecErr);
+                            return reject(vecErr);
+                        }
+                        resolve();
+                    });
+                });
+            } catch (e) {
+                console.error('Failed to extract or insert vector for:', photoPath, e);
+            }
+        }
+
+        // Step 5: Update the item
+        const updateQuery = `
+            UPDATE items 
+            SET 
+              name = ?, 
+              description = ?, 
+              acquisition_date = ?, 
+              cost = ?, 
+              origin = ?, 
+              documents = ?, 
+              brand = ?, 
+              model = ?, 
+              photos = ?, 
+              type = ?, 
+              links = ?
+            WHERE id = ? AND user_id = ?
+        `;
+
+        const values = [
+            updatedItem.name,
+            updatedItem.description,
+            updatedItem.acquisition_date,
+            updatedItem.cost,
+            updatedItem.origin,
+            allDocuments.join(','),
+            updatedItem.brand,
+            updatedItem.model,
+            allPhotos.join(','),
+            updatedItem.type,
+            updatedItem.links || '',
+            itemId,
+            userId
+        ];
+
+        db.query(updateQuery, values, (updateErr) => {
+            if (updateErr) {
+                console.error('Error updating item:', updateErr);
+                return res.status(500).send('Failed to update item');
+            }
+
+            res.json({ message: 'Item updated and vectors synchronized', item: updatedItem });
+        });
     });
 });
 

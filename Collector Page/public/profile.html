@@ -15,10 +15,10 @@
 <body>
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-      <p>Are you sure you want to logout?</p>
+      <p>De certeza que quer fazer sair ?</p>
       <div class="modal-buttons">
-        <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
-        <button id="cancelLogout" class="btn-cancel">Cancel</button>
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
       </div>
     </div>
   </div>
@@ -31,9 +31,9 @@
 
 
       <nav class="nav-menu">
-        <a href="/" class="active">Home</a>
+        <a href="/" class="active">Início</a>
         <a href="/index" id="searchTab">Items</a>
-        <a href="/add-item" id="addItemTab">Add Item</a> <!-- updated -->
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
         <a href="/forum">Forum</a>
       </nav>
     </div>
@@ -42,28 +42,28 @@
 
     <div class="user-profile">
       <div class="profile-dropdown">
-        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
         <div class="profile-dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="/profile">Profile</a>
-          <a href="#">Settings</a>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
   </header>
 
   <div class="container profile-container">
-    <h1>Your Profile</h1>
+    <h1>Perfil</h1>
     <div class="profile-card">
-      <img id="profilePic" alt="Profile Picture" class="profile-img-large" />
+      <img id="profilePic" alt="Perfil Picture" class="profile-img-large" />
       <div class="profile-info">
         <p><strong>Username:</strong> <span id="profileDisplay">Loading...</span></p>
         <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
-        <p><strong>Total Items:</strong> <span id="itemCountDisplay">Loading...</span></p>
-        <p><strong>Total Items Cost:</strong> <span id="itemCostDisplay">Loading...</span></p>
+        <p><strong>Total de Items:</strong> <span id="itemCountDisplay">Loading...</span></p>
+        <p><strong>Total Items Custo:</strong> <span id="itemCostDisplay">Loading...</span></p>
         <!-- Add more fields as needed -->
       </div>
-      <button class="btn-edit" id="editProfileBtn">Edit Profile</button>
+      <button class="btn-edit" id="editProfileBtn">Editar Perfil</button>
     </div>
   </div>
 

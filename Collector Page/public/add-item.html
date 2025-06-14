@@ -13,10 +13,10 @@
 <body>
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-      <p>Are you sure you want to logout?</p>
+      <p>De certeza que quer fazer sair ?</p>
       <div class="modal-buttons">
-        <button id="confirmLogout" class="btn-confirm">Yes, Logout</button>
-        <button id="cancelLogout" class="btn-cancel">Cancel</button>
+        <button id="confirmLogout" class="btn-confirm">Sim, sair</button>
+        <button id="cancelLogout" class="btn-cancel">Cancelar</button>
       </div>
     </div>
   </div>
@@ -24,26 +24,26 @@
     <a href="/" class="logo">
       <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
     </a>
-    
-    <div>    <button  id="menuToggleBtn">Menu</button>
-    
-    <nav class="nav-menu">
-  
-      <a href="/">Home</a>
-      <a href="/index" id="searchTab">Items</a>
-      <a href="/add-item" id="addItemTab" class="active">Add Item</a> <!-- updated -->
-      <a href="/forum">Forum</a>
 
-    </nav>
-</div>
+    <div> <button id="menuToggleBtn">Menu</button>
+
+      <nav class="nav-menu">
+
+        <a href="/">Início</a>
+        <a href="/index" id="searchTab">Items</a>
+        <a href="/add-item" id="addItemTab" class="active">Adicionar</a> <!-- updated -->
+        <a href="/forum">Forum</a>
+
+      </nav>
+    </div>
     <div class="user-profile">
 
       <div class="profile-dropdown">
-        <img src="/public/images/profile_image/default-avatar.png" alt="Profile" class="profile-img" id="profileImg" />
+        <img src="/public/images/profile_image/default-avatar.png" alt="Perfil" class="profile-img" id="profileImg" />
         <div class="profile-dropdown-menu" id="profileDropdown">
           <div id="usernameDisplay" class="dropdown-username"></div>
-          <a href="/profile">Profile</a>
-          <a href="#">Settings</a>
+          <a href="/profile">Perfil</a>
+          <a href="#">Definições</a>
           <a href="#" id="logoutBtnDropdown">Logout</a>
         </div>
       </div>
@@ -51,63 +51,63 @@
   </header>
 
   <div class="container">
-    <h2>Add a New Item</h2>
+    <h2>Adicionar Item Novo</h2>
     <form id="addItemForm">
       <div class="form-group">
-        <label for="name">Item Name</label>
-        <input type="text" id="name" placeholder="Item Name" required>
+        <label for="name">Nome Item</label>
+        <input type="text" id="name" placeholder="Nome Item" required />
       </div>
 
       <div class="form-group">
-        <label for="description">Description</label>
-        <input type="text" id="description" placeholder="Description" required>
+        <label for="description">Descrição</label>
+        <input type="text" id="description" placeholder="Descrição" required />
       </div>
 
       <div class="form-group">
-        <label for="acquisition_date">Acquisition Date</label>
-        <input type="date" id="acquisition_date" placeholder="Acquisition Date" required>
+        <label for="acquisition_date">Data de Aquisição</label>
+        <input type="date" id="acquisition_date" placeholder="Data de Aquisição" required />
       </div>
 
       <div class="form-group">
-        <label for="cost">Item Cost</label>
-        <input type="number" id="cost" placeholder="Cost " step="0.01" min="0">
+        <label for="cost">Custo do Item</label>
+        <input type="number" id="cost" placeholder="Custo " step="0.01" min="0">
       </div>
 
       <div class="form-group">
-        <label for="origin">Origin</label>
-        <input type="text" id="origin" placeholder="Origin">
+        <label for="origin">Origem</label>
+        <input type="text" id="origin" placeholder="Origem">
       </div>
 
       <div class="form-group">
-        <label for="documents">Upload Documents</label>
+        <label for="documents">Carregar Documentos</label>
         <input type="file" id="documents" name="documents" multiple
           accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx,.zip">
       </div>
       <div class="form-group">
-        <label for="links">Related Links</label>
+        <label for="links">Links Relacionados</label>
         <textarea id="links" name="links" rows="3" placeholder="Enter one URL per line"></textarea>
       </div>
 
       <div class="form-group">
-        <label for="brand">Item Brand</label>
-        <input type="text" id="brand" placeholder="Brand">
+        <label for="brand">Marca</label>
+        <input type="text" id="brand" placeholder="Marca">
       </div>
       <div class="form-group">
-        <label for="model">Item Model</label>
-        <input type="text" id="model" placeholder="Model">
+        <label for="model">Modelo</label>
+        <input type="text" id="model" placeholder="Modelo">
       </div>
       <div class="form-group">
-        <label for="photos">Upload Photos</label>
+        <label for="photos">Carregar Fotos</label>
         <input type="file" id="photos" name="photos" multiple accept="image/*">
       </div>
       <div class="form-group">
-        <label for="type">Collection Type</label>
+        <label for="type">Tipo de Coleção</label>
         <select id="type">
           <option value="private">Private</option>
           <option value="public">Public</option>
         </select>
       </div>
-      <button type="submit">Add Item</button>
+      <button type="submit">Adicionar Item</button>
     </form>
     <div id="formMessage" class="form-message" style="color: red; margin-top: 10px;"></div>
 
@@ -133,7 +133,6 @@
         const response = await fetch('/user/profile-data');
         const data = await response.json();
         if (data.username) {
-          console.log(data)
           const profileImageUrl = data.profile_image
           document.getElementById('profileImg').src = profileImageUrl;
 
@@ -145,6 +144,7 @@
 
     async function addItem(event) {
       event.preventDefault();
+
 
       const formData = new FormData();
       formData.append('name', document.getElementById('name').value.trim());
