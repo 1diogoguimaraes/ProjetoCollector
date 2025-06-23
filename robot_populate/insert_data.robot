@@ -9,7 +9,7 @@ Library    String
 *** Variables ***
 ${BROWSER}    chrome
 ${LOCALHOST_URL}    http://localhost:3000
-${ITEMS_NUMBER}    100
+${ITEMS_NUMBER}    10
 
 
 ${ADD_ITEM_TAB}    addItemTab
@@ -62,7 +62,7 @@ Open website collector
     Open Browser    ${LOCALHOST_URL}    ${BROWSER}
     Click Element    loginBtn
     Wait Until Element Is Visible    username
-    Input Text    username    pop1
+    Input Text    username    ze
     Input Password    password    Password.123456
     Click Button    //form/button
 
