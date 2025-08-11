@@ -39,71 +39,109 @@
     </form>
     <p>Já tem uma conta? <a href="/login" class="btn-user-page">Login aqui</a></p>
   </div>
+  <div id="customAlertModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+    <div
+      style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+      <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+      <button onclick="closeCustomAlert()"
+        style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+    </div>
+    <!-- Script -->
+    <script src="public/js/utils.js"></script>
 
-  <!-- Script -->
-  <script>
-    async function register(event) {
-      event.preventDefault();
+    <script>
+      let alertResolve = null;
 
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
-      const email = document.getElementById('email').value.trim();
-      const registerButton = document.getElementById('registerButton');
-
-      if (!username || !password || !confirmPassword || !email) {
-        alert("All fields are required.");
-        return;
-      }
-
-      if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-        alert("Username must be at least 3 characters and contain only letters, numbers, and underscores.");
-        return;
-      }
-
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email)) {
-        alert("Please enter a valid email address.");
-        return;
-      }
-
-      const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
-      if (!passwordPattern.test(password)) {
-        alert("Password must be at least 6 characters long, with at least one uppercase letter, one lowercase letter, and one number.");
-        return;
-      }
-
-      if (password !== confirmPassword) {
-        alert("Passwords do not match.");
-        return;
-      }
-
-      registerButton.disabled = true;
-
-      try {
-        const response = await fetch('/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password, email })
+      function customAlert(message) {
+        return new Promise((resolve) => {
+          alertResolve = resolve;
+          const modal = document.getElementById("customAlertModal");
+          const msgBox = document.getElementById("customAlertMessage");
+          msgBox.textContent = message;
+          modal.style.display = "block";
         });
-
-        if (response.ok) {
-          alert("Registration successful!");
-          window.location.href = '/login';
-        } else {
-          const error = await response.text();
-          alert("Registration failed: " + error);
-        }
-      } catch (error) {
-        alert("An error occurred: " + error.message);
-      } finally {
-        registerButton.disabled = false;
       }
-    }
+
+      function closeCustomAlert() {
+        const modal = document.getElementById("customAlertModal");
+        modal.style.display = "none";
+
+        if (typeof alertResolve === 'function') {
+          alertResolve(); // this resumes the "await customAlert()"
+          alertResolve = null;
+        }
+      }
+
+      async function register(event) {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const email = document.getElementById('email').value.trim();
+        const registerButton = document.getElementById('registerButton');
+
+        if (!username || !password || !confirmPassword || !email) {
+          await customAlert('Todos os campos devem estar preenchidos!');
+
+          return;
+        }
+
+        if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+          await customAlert('o username deve conter pelo menos 3 caracteres e só deve conter letras, numeros e underscores.');
+
+          return;
+        }
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(email)) {
+          await customAlert('Por favor insira um email valido.');
+          return;
+        }
+
+        const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}$/;
+        if (!passwordPattern.test(password)) {
+          await customAlert('A password deve conter pelo menos 6 caracteres, pelo menos uma letra maiuscula, uma minuscula e um numero');
+
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          await customAlert('Passwords não são iguais.');
+
+          return;
+        }
+
+        registerButton.disabled = true;
+
+        try {
+          const response = await fetch('/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password, email })
+          });
+
+          if (response.ok) {
+            await customAlert('Registo bem sucedido!');
+
+            window.location.href = '/login';
+          } else {
+            const error = await response.text();
+            await customAlert('Falha no registo: ' + error);
+
+          }
+        } catch (error) {
+          await customAlert('Ocurreu um erro: ' + error.message);
+
+        } finally {
+          registerButton.disabled = false;
+        }
+      }
 
 
-    document.getElementById('registerForm').addEventListener('submit', register);
-  </script>
+      document.getElementById('registerForm').addEventListener('submit', register);
+    </script>
 
 </body>
 

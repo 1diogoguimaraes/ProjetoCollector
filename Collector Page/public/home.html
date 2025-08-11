@@ -28,17 +28,17 @@
   <header class="site-header">
     <a href="/" class="logo">
       <img src="/public/images/logo.png" alt="MyApp Logo" class="logo-img" />
-      
+
     </a>
-<div>
-    <button  id="menuToggleBtn">Menu</button>
-    <nav class="nav-menu">
-      <a href="/" class="active">Início</a>
-      <a href="/index" id="searchTab">Items</a>
-      <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
-      <a href="/forum">Forum</a>
-    </nav>
-  </div>
+    <div>
+      <button id="menuToggleBtn">Menu</button>
+      <nav class="nav-menu">
+        <a href="/" class="active">Início</a>
+        <a href="/index" id="searchTab">Items</a>
+        <a href="/add-item" id="addItemTab">Adicionar</a> <!-- updated -->
+        <a href="/forum">Forum</a>
+      </nav>
+    </div>
     <button onclick="location.href='/login'" id="loginBtn" style="display: none;">Login</button>
 
 
@@ -62,60 +62,89 @@
       <p style="text-align: center;">A sua plataforma para organizar os seus items.</p>
     </div>
   </div>
+  <div id="customAlertModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+    <div
+      style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+      <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+      <button onclick="closeCustomAlert()"
+        style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+    </div>
 
+    <script src="public/js/utils.js"></script>
 
-  <script src="public/js/utils.js"></script>
+    <script>
+      let alertResolve = null;
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Fetch user information to determine login status
-      fetch('/user')
-        .then(res => res.json())
-        .then(data => {
-          if (data.username) {
-            // User is logged in
-            console.log("Logged in as:", data.username);
-            document.getElementById('usernameDisplay').textContent = data.username;
-            document.getElementById('userProfile').style.display = 'flex';
-          } else {
-            // User is not logged in
-            console.log("No user found");
-            document.getElementById('loginBtn').style.display = 'flex';
-          }
-        })
-        .catch(err => {
-          // Error fetching user data - show login button as fallback
-          console.error('Error checking user login status:', err);
-          document.getElementById('loginBtn').style.display = 'flex';
+      function customAlert(message) {
+        return new Promise((resolve) => {
+          alertResolve = resolve;
+          const modal = document.getElementById("customAlertModal");
+          const msgBox = document.getElementById("customAlertMessage");
+          msgBox.textContent = message;
+          modal.style.display = "block";
         });
-    });
-
-
-    async function loadUserInfo() {
-      const response = await fetch('/user');
-      const data = await response.json();
-      if (data.username) {
-        document.getElementById('usernameDisplay').innerText = `${data.username}`;
       }
-    }
-    async function loadUserData() {
-      try {
-        const response = await fetch('/user/profile-data');
+
+      function closeCustomAlert() {
+        const modal = document.getElementById("customAlertModal");
+        modal.style.display = "none";
+
+        if (typeof alertResolve === 'function') {
+          alertResolve(); // this resumes the "await customAlert()"
+          alertResolve = null;
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Fetch user information to determine login status
+        fetch('/user')
+          .then(res => res.json())
+          .then(data => {
+            if (data.username) {
+              // User is logged in
+              console.log("Logged in as:", data.username);
+              document.getElementById('usernameDisplay').textContent = data.username;
+              document.getElementById('userProfile').style.display = 'flex';
+            } else {
+              // User is not logged in
+              console.log("No user found");
+              document.getElementById('loginBtn').style.display = 'flex';
+            }
+          })
+          .catch(err => {
+            // Error fetching user data - show login button as fallback
+            console.error('Error checking user login status:', err);
+            document.getElementById('loginBtn').style.display = 'flex';
+          });
+      });
+
+
+      async function loadUserInfo() {
+        const response = await fetch('/user');
         const data = await response.json();
         if (data.username) {
-          console.log(data)
-          const profileImageUrl = data.profile_image
-          document.getElementById('profileImg').src = profileImageUrl;
-
+          document.getElementById('usernameDisplay').innerText = `${data.username}`;
         }
-      } catch (err) {
-        console.error('Failed to load user data:', err);
       }
-    }
+      async function loadUserData() {
+        try {
+          const response = await fetch('/user/profile-data');
+          const data = await response.json();
+          if (data.username) {
+            console.log(data)
+            const profileImageUrl = data.profile_image
+            document.getElementById('profileImg').src = profileImageUrl;
 
-    loadUserInfo();
-    loadUserData();
-  </script>
+          }
+        } catch (err) {
+          console.error('Failed to load user data:', err);
+        }
+      }
+
+      loadUserInfo();
+      loadUserData();
+    </script>
 
 
 
