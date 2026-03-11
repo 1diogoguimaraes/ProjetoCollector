@@ -257,259 +257,229 @@
       </div>
     </div>
 
+    <div id="customAlertModal"
+      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+      <div
+        style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+        <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+        <button onclick="closeCustomAlert()"
+          style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+      </div>
 
+      <!-- Script -->
+      <script src="public/js/utils.js"></script>
 
-    <!-- Script -->
-    <script src="public/js/utils.js"></script>
+      <script>
 
-    <script>
-      function startQrScanner() {
-        const qrScanner = new Html5Qrcode("qr-reader");
+        let alertResolve = null;
 
-        const stopTimeout = setTimeout(() => {
-          qrScanner.stop().then(() => {
-            console.log("QR scanner stopped after timeout.");
-          }).catch((err) => {
-            console.error("Error stopping QR scanner:", err);
+        function customAlert(message) {
+          return new Promise((resolve) => {
+            alertResolve = resolve;
+            const modal = document.getElementById("customAlertModal");
+            const msgBox = document.getElementById("customAlertMessage");
+            msgBox.textContent = message;
+            modal.style.display = "block";
           });
-        }, 20000); // 10000 ms = 10 seconds
+        }
 
-        qrScanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 30,
-            qrbox: 250
-          },
-          (decodedText) => {
-            clearTimeout(stopTimeout); // Stop the timer once QR is scanned
-            qrScanner.stop();
+        function closeCustomAlert() {
+          const modal = document.getElementById("customAlertModal");
+          modal.style.display = "none";
 
-            // Extract ID from the decoded URL
-            const url = new URL(decodedText);
-            const searchId = url.searchParams.get("search");
-            const field = url.searchParams.get("field");
-
-            // Set the search input and field
-            document.getElementById('search').value = searchId;
-            document.getElementById('searchField').value = field;
-            // Trigger the search
-            fetchItems();
-          },
-          (err) => {
-            console.warn(`QR error: ${err}`);
+          if (typeof alertResolve === 'function') {
+            alertResolve(); // this resumes the "await customAlert()"
+            alertResolve = null;
           }
-        );
-      }
+        }
 
-      /////////////////////////////////////////////
+        function startQrScanner() {
+          const qrScanner = new Html5Qrcode("qr-reader");
 
-      ////// SEARCH BY IMAGE FUNCTION ////////////////
+          const stopTimeout = setTimeout(() => {
+            qrScanner.stop().then(() => {
+              console.log("QR scanner stopped after timeout.");
+            }).catch((err) => {
+              console.error("Error stopping QR scanner:", err);
+            });
+          }, 20000); // 10000 ms = 10 seconds
 
-      document.getElementById('searchForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-        const threshold = form.threshold.value || '0.8';
+          qrScanner.start(
+            { facingMode: "environment" },
+            {
+              fps: 30,
+              qrbox: 250
+            },
+            (decodedText) => {
+              clearTimeout(stopTimeout); // Stop the timer once QR is scanned
+              qrScanner.stop();
 
-        try {
-          const res = await fetch(`/search-similar?threshold=${threshold}`, {
-            method: 'POST',
-            body: formData,
-          });
+              // Extract ID from the decoded URL
+              const url = new URL(decodedText);
+              const searchId = url.searchParams.get("search");
+              const field = url.searchParams.get("field");
 
-          if (!res.ok) {
-            throw new Error(await res.text());
-          }
+              // Set the search input and field
+              document.getElementById('search').value = searchId;
+              document.getElementById('searchField').value = field;
+              // Trigger the search
+              fetchItems();
+            },
+            (err) => {
+              console.warn(`QR error: ${err}`);
+            }
+          );
+        }
 
-          const results = await res.json();
-          const resultsContainer = document.getElementById('results');
-          resultsContainer.innerHTML = '';
+        /////////////////////////////////////////////
 
-          if (results.length === 0) {
-            resultsContainer.textContent = 'No similar items found.';
-            return;
-          }
+        ////// SEARCH BY IMAGE FUNCTION ////////////////
 
-          results.forEach(item => {
-            const div = document.createElement('div');
-            div.innerHTML = `
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const form = e.target;
+          const formData = new FormData(form);
+          const threshold = form.threshold.value || '0.8';
+
+          try {
+            const res = await fetch(`/search-similar?threshold=${threshold}`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!res.ok) {
+              throw new Error(await res.text());
+            }
+
+            const results = await res.json();
+            const resultsContainer = document.getElementById('results');
+            resultsContainer.innerHTML = '';
+
+            if (results.length === 0) {
+              resultsContainer.textContent = 'No similar items found.';
+              return;
+            }
+
+            results.forEach(item => {
+              const div = document.createElement('div');
+              div.innerHTML = `
           <p><strong>Item ID:</strong> ${item.item_id}</p>
           <p><strong>Similarity:</strong> ${(item.similarity * 100).toFixed(2)}%</p>
           <img src="${item.photo_path}" alt="Matched Image" width="200" />
           <hr />
         `;
-            resultsContainer.appendChild(div);
-          });
-        } catch (err) {
-          alert('Error: ' + err.message);
-        }
-      });
-
-      //////////////////////////////////////////////////
-
-      let viewMode = 'card'; // or 'table'
-      function setViewMode(mode) {
-        viewMode = mode;
-        document.getElementById('cardViewContainer').style.display = mode === 'card' ? 'flex' : 'none';
-        document.getElementById('tableViewContainer').style.display = mode === 'table' ? 'table' : 'none';
-        renderPage();
-      }
+              resultsContainer.appendChild(div);
+            });
+          } catch (err) {
+            await customAlert('Erro:' + err.message);
 
 
-      //////////////////////////////////////////////////
-      document.getElementById('search').addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault(); // prevent accidental form submission
-          fetchItems();
-        }
-      });
+          }
+        });
 
-      function popFromEnd(str, delimiter) {
-        const index = str.lastIndexOf(delimiter);
-        if (index === -1) return [str, '']; // No delimiter found
-        return [str.slice(0, index), str.slice(index + delimiter.length)];
-      }
+        //////////////////////////////////////////////////
 
-
-
-
-      searchTab.addEventListener('click', () => switchTab('search'));
-      addItemTab.addEventListener('click', () => switchTab('add'));
-
-
-
-
-      // Fetch Items
-      let currentPage = 1;
-      let itemsPerPage = 6; // You can make this dynamic if needed
-      let currentItems = [];  // Store fetched items
-      const currentPhotoIndexes = {};
-
-
-      async function fetchItems() {
-        const searchQuery = document.getElementById('search').value;
-        const searchField = document.getElementById('searchField').value;
-
-
-
-
-        try {
-          const response = await fetch(`/itemsForum?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
-          const data = await response.json();
-          currentItems = data.items;
-          totalItems = data.total;
+        let viewMode = 'card'; // or 'table'
+        function setViewMode(mode) {
+          viewMode = mode;
+          document.getElementById('cardViewContainer').style.display = mode === 'card' ? 'flex' : 'none';
+          document.getElementById('tableViewContainer').style.display = mode === 'table' ? 'table' : 'none';
           renderPage();
-        } catch (error) {
-          console.error('Failed to fetch items:', error);
-          alert('Error loading data.');
         }
-      }
 
 
-      function renderPage() {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
+        //////////////////////////////////////////////////
+        document.getElementById('search').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') {
+            e.preventDefault(); // prevent accidental form submission
+            fetchItems();
+          }
+        });
 
-        // Update pagination info
-        const pageInfo = document.getElementById('pageInfo');
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        pageInfo.textContent = `Página ${currentPage} of ${totalPages}`;
+        function popFromEnd(str, delimiter) {
+          const index = str.lastIndexOf(delimiter);
+          if (index === -1) return [str, '']; // No delimiter found
+          return [str.slice(0, index), str.slice(index + delimiter.length)];
+        }
 
-        if (viewMode === 'card') {
-          const cardContainer = document.getElementById('cardViewContainer');
-          cardContainer.innerHTML = '';
 
-          currentItems.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            currentPhotoIndexes[item.id] = 0;
 
-            const photos = item.photos ? item.photos.split(',').map(p => p.trim()).filter(Boolean) : [];
 
-            const mainPhoto = photos.length > 0 ? photos[0] : null; // This is the initially shown main image
-            const mainImageSection = mainPhoto
-              ? `
+        searchTab.addEventListener('click', () => switchTab('search'));
+        addItemTab.addEventListener('click', () => switchTab('add'));
+
+
+
+
+        // Fetch Items
+        let currentPage = 1;
+        let itemsPerPage = 6; // You can make this dynamic if needed
+        let currentItems = [];  // Store fetched items
+        const currentPhotoIndexes = {};
+
+
+        async function fetchItems() {
+          const searchQuery = document.getElementById('search').value;
+          const searchField = document.getElementById('searchField').value;
+
+
+
+
+          try {
+            const response = await fetch(`/itemsForum?search=${encodeURIComponent(searchQuery)}&field=${encodeURIComponent(searchField)}&page=${currentPage}&limit=${itemsPerPage}`);
+            const data = await response.json();
+            currentItems = data.items;
+            totalItems = data.total;
+            renderPage();
+          } catch (error) {
+            console.error('Failed to fetch items:', error);
+            await customAlert('Erro carregar data');
+
+          }
+        }
+
+
+        function renderPage() {
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+
+          // Update pagination info
+          const pageInfo = document.getElementById('pageInfo');
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          pageInfo.textContent = `Página ${currentPage} of ${totalPages}`;
+
+          if (viewMode === 'card') {
+            const cardContainer = document.getElementById('cardViewContainer');
+            cardContainer.innerHTML = '';
+
+            currentItems.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'item-card';
+              currentPhotoIndexes[item.id] = 0;
+
+              const photos = item.photos ? item.photos.split(',').map(p => p.trim()).filter(Boolean) : [];
+
+              const mainPhoto = photos.length > 0 ? photos[0] : null; // This is the initially shown main image
+              const mainImageSection = mainPhoto
+                ? `
   <div class="main-image-wrapper">
     <button class="arrow left" onclick="prevImage(${item.id}, '${photos.join('|')}')">&#9664;</button>
     <img id="main-img-${item.id}" src="${mainPhoto}" alt="Main Photo" onclick="handleImageClick(${item.id}, '${photos.join('|')}')">
     <button class="arrow right" onclick="nextImage(${item.id}, '${photos.join('|')}')">&#9654;</button>
   </div>
   `
-              : '<div class="no-image">Imagem indesponível</div>';
+                : '<div class="no-image">Imagem indesponível</div>';
 
 
 
-            const carouselHTML = photos.length > 1
-              ? `<div class="carousel-thumbnails">
+              const carouselHTML = photos.length > 1
+                ? `<div class="carousel-thumbnails">
       ${photos.map((photo, index) => `
         <img src="${photo}" class="thumbnail" loading="lazy" onclick="changeMainImage(${item.id}, '${photo}')">
       `).join('')}
      </div>`
-              : '';
-            const documentLinks = item.documents
-              ? item.documents
-                .split(',')
-                .map(doc => {
-                  const trimmed = doc.trim();
-                  const fileName = trimmed.split('/').pop();
-                  const fileNameSimple = trimmed.split('___').pop();
-                  const fileDateAdded = fileName.split('___').shift();
-                  const ext = fileNameSimple.split('.').pop().toLowerCase();
-
-                  let iconClass = 'fa-file';
-                  if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
-                  else if (ext === 'pdf') iconClass = 'fa-file-pdf';
-                  else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
-                  else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
-                  else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
-                  else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
-
-                  return `
-              <div class="doc-link">
-                <p class="doc-date">${fileDateAdded}</p>
-                <a href="${trimmed}" target="_blank" title="Preview">
-                  <i class="fas ${iconClass}"></i> ${fileNameSimple}
-                </a>
-                <a href="${trimmed}" download="${fileName}" title="Download">
-                  <i class="fas fa-download"></i>
-                </a>
-              </div>
-            `;
-                })
-                .join('')
-              : '<p>Sem Documentos</p>';
-
-            card.innerHTML = `
-<div class="card-img">
-  ${mainImageSection}
-  ${carouselHTML}
-</div>
-
-      <div class="card-content">
-        <h3>${item.name}</h3>
-        <p>${item.username || 'N/A'}</p>
-      </div>
-    `;
-
-            cardContainer.appendChild(card);
-            card.querySelector('.card-content').addEventListener('click', () => showItemModal(item));
-
-          });
-
-        } else if (viewMode === 'table') {
-          const tableBody = document.querySelector('#tableViewContainer tbody');
-
-          tableBody.innerHTML = '';
-
-          currentItems.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-        <td>${item.name}</td>
-        <td>${item.description}</td>
-        <td>${item.acquisition_date?.split('T')[0] || 'N/A'}</td>
-        <td>${item.cost || 'N/A'}</td>
-        <td>${item.origin || 'N/A'}</td>
-        <td>${item.documents
+                : '';
+              const documentLinks = item.documents
                 ? item.documents
                   .split(',')
                   .map(doc => {
@@ -528,70 +498,6 @@
                     else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
 
                     return `
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
-                      <p style="font-size:12px; color:lightgrey; margin:0;">${fileDateAdded}</p>
-                      <a href="${trimmed}" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:4px;" title="Preview">
-                        <i class="fas ${iconClass}" style="color:grey;"></i> ${fileNameSimple}
-                      </a>
-                      <a href="${trimmed}" download="${fileName}" title="Download">
-                        <i class="fas fa-download" style="color:darkgrey;"></i>
-                      </a>
-                    </div>
-                  `;
-                  }).join('')
-                : 'Sem Documentos'
-              }</td>
-        <td>${item.brand || 'N/A'}</td>
-        <td>${item.model || 'N/A'}</td>
-        <td>${item.photos
-                ? item.photos
-                  .split(',')
-                  .map((url, index) => `<img src="${url.trim()}" style="width:50px;height:auto;margin-right:4px;cursor:pointer;" onclick="openImageModal('${item.photos.split(',').join('|')}', ${index})">`)
-                  .join('')
-                : 'No images'}
-        </td>
-        <td>${item.links && item.links.length
-                ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="display:block;  word-break:break-word;">${link}</a>`).join('')
-                : 'No links'
-              }</td>
-        <td>${item.username || 'N/A'}</td>
-      `;
-            tableBody.appendChild(row);
-          });
-        }
-      }
-      function handleSearch() {
-        currentPage = 1;
-        fetchItems();
-      }
-      function showItemModal(item) {
-        const modal = document.getElementById('itemModal');
-        const modalContent = document.getElementById('modalDetails');
-
-        const photos = item.photos ? item.photos.split(',').map(p => p.trim()) : [];
-        const photoElements = photos.map(url =>
-          `<img src="${url}" style="width: 100%; max-height: 400px; object-fit: contain; margin-bottom: 10px;">`
-        ).join('');
-
-        const documentLinks = item.documents
-          ? item.documents
-            .split(',')
-            .map(doc => {
-              const trimmed = doc.trim();
-              const fileName = trimmed.split('/').pop();
-              const fileNameSimple = trimmed.split('___').pop();
-              const fileDateAdded = fileName.split('___').shift();
-              const ext = fileNameSimple.split('.').pop().toLowerCase();
-
-              let iconClass = 'fa-file';
-              if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
-              else if (ext === 'pdf') iconClass = 'fa-file-pdf';
-              else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
-              else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
-              else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
-              else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
-
-              return `
               <div class="doc-link">
                 <p class="doc-date">${fileDateAdded}</p>
                 <a href="${trimmed}" target="_blank" title="Preview">
@@ -602,15 +508,142 @@
                 </a>
               </div>
             `;
-            })
-            .join('')
-          : '<p>Sem Documentos</p>';
+                  })
+                  .join('')
+                : '<p>Sem Documentos</p>';
 
-        const linksHTML = item.links && item.links.length
-          ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
-          : 'No links';
+              card.innerHTML = `
+<div class="card-img">
+  ${mainImageSection}
+  ${carouselHTML}
+</div>
 
-        modalContent.innerHTML = `
+      <div class="card-content">
+        <h3>${item.name}</h3>
+        <p>${item.username || 'N/A'}</p>
+      </div>
+    `;
+
+              cardContainer.appendChild(card);
+              card.querySelector('.card-content').addEventListener('click', () => showItemModal(item));
+
+            });
+
+          } else if (viewMode === 'table') {
+            const tableBody = document.querySelector('#tableViewContainer tbody');
+
+            tableBody.innerHTML = '';
+
+            currentItems.forEach(item => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+        <td>${item.name}</td>
+        <td>${item.description}</td>
+        <td>${item.acquisition_date?.split('T')[0] || 'N/A'}</td>
+        <td>${item.cost || 'N/A'}</td>
+        <td>${item.origin || 'N/A'}</td>
+        <td>${item.documents
+                  ? item.documents
+                    .split(',')
+                    .map(doc => {
+                      const trimmed = doc.trim();
+                      const fileName = trimmed.split('/').pop();
+                      const fileNameSimple = trimmed.split('___').pop();
+                      const fileDateAdded = fileName.split('___').shift();
+                      const ext = fileNameSimple.split('.').pop().toLowerCase();
+
+                      let iconClass = 'fa-file';
+                      if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                      else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                      else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                      else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                      else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                      else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+
+                      return `
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                      <p style="font-size:12px; color:lightgrey; margin:0;">${fileDateAdded}</p>
+                      <a href="${trimmed}" target="_blank" style="text-decoration:none; display:flex; align-items:center; gap:4px;" title="Preview">
+                        <i class="fas ${iconClass}" style="color:grey;"></i> ${fileNameSimple}
+                      </a>
+                      <a href="${trimmed}" download="${fileName}" title="Download">
+                        <i class="fas fa-download" style="color:darkgrey;"></i>
+                      </a>
+                    </div>
+                  `;
+                    }).join('')
+                  : 'Sem Documentos'
+                }</td>
+        <td>${item.brand || 'N/A'}</td>
+        <td>${item.model || 'N/A'}</td>
+        <td>${item.photos
+                  ? item.photos
+                    .split(',')
+                    .map((url, index) => `<img src="${url.trim()}" style="width:50px;height:auto;margin-right:4px;cursor:pointer;" onclick="openImageModal('${item.photos.split(',').join('|')}', ${index})">`)
+                    .join('')
+                  : 'No images'}
+        </td>
+        <td>${item.links && item.links.length
+                  ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="display:block;  word-break:break-word;">${link}</a>`).join('')
+                  : 'No links'
+                }</td>
+        <td>${item.username || 'N/A'}</td>
+      `;
+              tableBody.appendChild(row);
+            });
+          }
+        }
+        function handleSearch() {
+          currentPage = 1;
+          fetchItems();
+        }
+        function showItemModal(item) {
+          const modal = document.getElementById('itemModal');
+          const modalContent = document.getElementById('modalDetails');
+
+          const photos = item.photos ? item.photos.split(',').map(p => p.trim()) : [];
+          const photoElements = photos.map(url =>
+            `<img src="${url}" style="width: 100%; max-height: 400px; object-fit: contain; margin-bottom: 10px;">`
+          ).join('');
+
+          const documentLinks = item.documents
+            ? item.documents
+              .split(',')
+              .map(doc => {
+                const trimmed = doc.trim();
+                const fileName = trimmed.split('/').pop();
+                const fileNameSimple = trimmed.split('___').pop();
+                const fileDateAdded = fileName.split('___').shift();
+                const ext = fileNameSimple.split('.').pop().toLowerCase();
+
+                let iconClass = 'fa-file';
+                if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                else if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                else if (['xls', 'xlsx', 'csv'].includes(ext)) iconClass = 'fa-file-excel';
+                else if (['pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                else if (['zip', 'rar', '7z'].includes(ext)) iconClass = 'fa-file-archive';
+                else if (['txt', 'md'].includes(ext)) iconClass = 'fa-file-lines';
+
+                return `
+              <div class="doc-link">
+                <p class="doc-date">${fileDateAdded}</p>
+                <a href="${trimmed}" target="_blank" title="Preview">
+                  <i class="fas ${iconClass}"></i> ${fileNameSimple}
+                </a>
+                <a href="${trimmed}" download="${fileName}" title="Download">
+                  <i class="fas fa-download"></i>
+                </a>
+              </div>
+            `;
+              })
+              .join('')
+            : '<p>Sem Documentos</p>';
+
+          const linksHTML = item.links && item.links.length
+            ? JSON.parse(item.links).map(link => `<a href="${link}" target="_blank" style="word-break: break-all;">${link}</a>`).join('<br>')
+            : 'No links';
+
+          modalContent.innerHTML = `
     <div style="display: flex; flex-direction: column; max-height: 90vh; width: 100%;">
       <div style="flex: 1 1 auto; display: flex; gap: 20px; overflow-x: hidden; overflow-y: hidden; box-sizing: border-box;">
 
@@ -640,419 +673,419 @@
     </div>
   `;
 
-        modal.style.display = 'flex';
-        modal.style.zIndex = '900';
-      }
-
-
-
-
-
-      function closeModal() {
-        document.getElementById('itemModal').style.display = 'none';
-      }
-
-
-      function changeMainImage(itemId, newSrc) {
-        const mainImg = document.getElementById(`main-img-${itemId}`);
-        if (mainImg) {
-          mainImg.src = newSrc;
+          modal.style.display = 'flex';
+          modal.style.zIndex = '900';
         }
-      }
-      function handleImageClick(itemId, allPhotosJoined) {
-        const photosArray = allPhotosJoined.split('|');
-        const mainImg = document.getElementById(`main-img-${itemId}`);
-        const currentSrc = mainImg?.src || '';
-        const index = photosArray.findIndex(p => currentSrc.includes(p.split('/').pop()));
-        openImageModal(allPhotosJoined, index >= 0 ? index : 0);
-      }
-
-      function prevImage(itemId, allPhotosJoined) {
-        const photos = allPhotosJoined.split('|');
-        if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
-
-        currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] - 1 + photos.length) % photos.length;
-        changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
-      }
-
-      function nextImage(itemId, allPhotosJoined) {
-        const photos = allPhotosJoined.split('|');
-        if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
-
-        currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] + 1) % photos.length;
-        changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
-      }
 
 
-      function nextPage() {
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        if (currentPage < totalPages) {
-          currentPage++;
-          fetchItems(); // Instead of renderPage()
+
+
+
+        function closeModal() {
+          document.getElementById('itemModal').style.display = 'none';
         }
-      }
 
-      function prevPage() {
-        if (currentPage > 1) {
-          currentPage--;
-          fetchItems(); // Instead of renderPage()
+
+        function changeMainImage(itemId, newSrc) {
+          const mainImg = document.getElementById(`main-img-${itemId}`);
+          if (mainImg) {
+            mainImg.src = newSrc;
+          }
         }
-      }
-      function changeItemsPerPage(value) {
-        itemsPerPage = parseInt(value);
-        currentPage = 1;
-        fetchItems();
-      }
+        function handleImageClick(itemId, allPhotosJoined) {
+          const photosArray = allPhotosJoined.split('|');
+          const mainImg = document.getElementById(`main-img-${itemId}`);
+          const currentSrc = mainImg?.src || '';
+          const index = photosArray.findIndex(p => currentSrc.includes(p.split('/').pop()));
+          openImageModal(allPhotosJoined, index >= 0 ? index : 0);
+        }
 
-      function toggleDropdown(button) {
-        const dropdown = button.nextElementSibling;
-        const allDropdowns = document.querySelectorAll('.dropdown-menu');
+        function prevImage(itemId, allPhotosJoined) {
+          const photos = allPhotosJoined.split('|');
+          if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
 
-        // Close other dropdowns
-        allDropdowns.forEach(menu => {
-          if (menu !== dropdown) menu.style.display = 'none';
+          currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] - 1 + photos.length) % photos.length;
+          changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
+        }
+
+        function nextImage(itemId, allPhotosJoined) {
+          const photos = allPhotosJoined.split('|');
+          if (!currentPhotoIndexes[itemId]) currentPhotoIndexes[itemId] = 0;
+
+          currentPhotoIndexes[itemId] = (currentPhotoIndexes[itemId] + 1) % photos.length;
+          changeMainImage(itemId, photos[currentPhotoIndexes[itemId]]);
+        }
+
+
+        function nextPage() {
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          if (currentPage < totalPages) {
+            currentPage++;
+            fetchItems(); // Instead of renderPage()
+          }
+        }
+
+        function prevPage() {
+          if (currentPage > 1) {
+            currentPage--;
+            fetchItems(); // Instead of renderPage()
+          }
+        }
+        function changeItemsPerPage(value) {
+          itemsPerPage = parseInt(value);
+          currentPage = 1;
+          fetchItems();
+        }
+
+        function toggleDropdown(button) {
+          const dropdown = button.nextElementSibling;
+          const allDropdowns = document.querySelectorAll('.dropdown-menu');
+
+          // Close other dropdowns
+          allDropdowns.forEach(menu => {
+            if (menu !== dropdown) menu.style.display = 'none';
+          });
+
+          // Toggle the current dropdown
+          dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+          if (!event.target.closest('.card-actions-dropdown')) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+              menu.style.display = 'none';
+            });
+          }
         });
 
-        // Toggle the current dropdown
-        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
-      }
 
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function (event) {
-        if (!event.target.closest('.card-actions-dropdown')) {
-          document.querySelectorAll('.dropdown-menu').forEach(menu => {
-            menu.style.display = 'none';
-          });
-        }
-      });
+        let currentImageIndex = 0;
+        let currentImageList = [];
 
+        function openImageModal(clickedUrl, startIndex = 0) {
+          currentImageList = clickedUrl.split('|');
+          currentImageIndex = startIndex;
 
-      let currentImageIndex = 0;
-      let currentImageList = [];
-
-      function openImageModal(clickedUrl, startIndex = 0) {
-        currentImageList = clickedUrl.split('|');
-        currentImageIndex = startIndex;
-
-        showImage(currentImageIndex);
-        document.getElementById('imageModal').style.display = 'flex';
-        document.body.classList.add('modal-open');
-      }
-
-
-      function showImage(index) {
-        const modalImg = document.getElementById('modalImage');
-        modalImg.src = currentImageList[index];
-      }
-
-      document.getElementById('closeModal').addEventListener('click', () => {
-        document.getElementById('imageModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-
-      });
-
-      document.getElementById('prevImage').addEventListener('click', () => {
-        if (currentImageIndex > 0) {
-          currentImageIndex--;
           showImage(currentImageIndex);
+          document.getElementById('imageModal').style.display = 'flex';
+          document.body.classList.add('modal-open');
         }
-      });
 
-      document.getElementById('nextImage').addEventListener('click', () => {
-        if (currentImageIndex < currentImageList.length - 1) {
-          currentImageIndex++;
-          showImage(currentImageIndex);
+
+        function showImage(index) {
+          const modalImg = document.getElementById('modalImage');
+          modalImg.src = currentImageList[index];
         }
-      });
 
-      document.getElementById('imageModal').addEventListener('click', (e) => {
-        if (e.target.id === 'imageModal') {
+        document.getElementById('closeModal').addEventListener('click', () => {
           document.getElementById('imageModal').style.display = 'none';
           document.body.classList.remove('modal-open');
 
-        }
-      });
-
-
-
-
-      async function addItem(event) {
-        event.preventDefault();
-        const item = {
-          name: document.getElementById('name').value,
-          description: document.getElementById('description').value,
-          acquisition_date: document.getElementById('acquisition_date').value,
-          cost: document.getElementById('cost').value,
-          origin: document.getElementById('origin').value,
-          documents: document.getElementById('documents').value,
-          brand: document.getElementById('brand').value,
-          model: document.getElementById('model').value,
-          photos: document.getElementById('photos').value,
-          type: document.getElementById('type').value
-        };
-
-        await fetch('/items', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(item)
         });
 
-        document.getElementById('addItemForm').reset();
-        switchTab('search');
-        fetchItems();
-      }
-
-
-
-
-      let itemIdToDelete = null;
-
-      function deleteItem(id) {
-        itemIdToDelete = id;
-        document.getElementById('deleteModal').style.display = 'flex';
-        document.body.classList.add('modal-open');
-
-      }
-
-      document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-        if (itemIdToDelete !== null) {
-          await fetch(`/items/${itemIdToDelete}`, { method: 'DELETE' });
-          fetchItems();
-          itemIdToDelete = null;
-        }
-        document.getElementById('deleteModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-
-      });
-
-      document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
-        itemIdToDelete = null;
-        document.getElementById('deleteModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-
-      });
-
-      // Open the Edit Modal with item data
-      function createImageThumbnail(url, container) {
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-
-        const img = document.createElement('img');
-        img.src = url;
-        img.style.width = '60px';
-        img.style.height = 'auto';
-        img.style.borderRadius = '4px';
-        img.style.border = '1px solid #ccc';
-
-        const removeBtn = document.createElement('span');
-        removeBtn.innerHTML = '&times;';
-        removeBtn.style.position = 'absolute';
-        removeBtn.style.top = '-8px';
-        removeBtn.style.right = '-8px';
-        removeBtn.style.background = '#f00';
-        removeBtn.style.color = '#fff';
-        removeBtn.style.padding = '0 5px';
-        removeBtn.style.cursor = 'pointer';
-        removeBtn.style.borderRadius = '50%';
-        removeBtn.style.fontSize = '14px';
-
-        removeBtn.onclick = () => {
-          container.removeChild(wrapper);
-        };
-
-        wrapper.appendChild(img);
-        wrapper.appendChild(removeBtn);
-        container.appendChild(wrapper);
-      }
-
-      async function editItem(id) {
-        const response = await fetch(`/items/${id}`);
-        const item = await response.json();
-        document.getElementById('edit-id').value = item.id;
-        document.getElementById('edit-name').value = item.name;
-        document.getElementById('edit-description').value = item.description;
-
-        if (item.acquisition_date) {
-          const date = new Date(item.acquisition_date);
-          const formatted = date.getFullYear() + '-' +
-            String(date.getMonth() + 1).padStart(2, '0') + '-' +
-            String(date.getDate()).padStart(2, '0');
-          document.getElementById('edit-acquisition_date').value = formatted;
-        } else {
-          document.getElementById('edit-acquisition_date').value = '';
-        }
-
-        document.getElementById('edit-documents').value = '';
-        document.getElementById('edit-cost').value = item.cost || '';
-        document.getElementById('edit-origin').value = item.origin || '';
-        document.getElementById('edit-brand').value = item.brand || '';
-        document.getElementById('edit-model').value = item.model || '';
-        document.getElementById('edit-photos').value = '';
-        document.getElementById('edit-links').value = item.links
-          ? JSON.parse(item.links).join('\n')
-          : '';
-
-        document.getElementById('edit-type').value = item.type || 'private';
-
-        // Handle photos
-        const photoPreview = document.getElementById('edit-photo-preview');
-        photoPreview.innerHTML = '';
-        if (item.photos) {
-          item.photos.split(',').forEach(url => {
-            if (url.trim()) createImageThumbnail(url.trim(), photoPreview);
-          });
-        }
-
-        // Handle documents
-        const docPreview = document.getElementById('edit-documents-preview');
-        docPreview.innerHTML = '';
-        if (item.documents) {
-          item.documents.split(',').forEach(url => {
-            const trimmed = url.trim();
-            const fileName = trimmed.split('/').pop();
-            const fileNameSimple = trimmed.split('___').pop();
-
-            const wrapper = document.createElement('div');
-            wrapper.style.marginBottom = '5px';
-
-            const link = document.createElement('a');
-            link.href = trimmed;
-            link.textContent = fileNameSimple;
-            link.target = '_blank';
-
-            const removeBtn = document.createElement('span');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.style.marginLeft = '10px';
-            removeBtn.style.cursor = 'pointer';
-            removeBtn.style.color = 'red';
-            removeBtn.onclick = () => {
-              docPreview.removeChild(wrapper);
-            };
-
-            wrapper.appendChild(link);
-            wrapper.appendChild(removeBtn);
-            docPreview.appendChild(wrapper);
-          });
-        }
-
-        document.getElementById('editModal').style.display = 'flex';
-        document.body.classList.add('modal-open');
-      }
-
-
-      // Submit edited data
-      document.getElementById('editItemForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const id = document.getElementById('edit-id').value;
-        const formData = new FormData();
-        formData.append('name', document.getElementById('edit-name').value);
-        formData.append('description', document.getElementById('edit-description').value);
-        formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
-        formData.append('cost', document.getElementById('edit-cost').value);
-        formData.append('origin', document.getElementById('edit-origin').value);
-        formData.append('brand', document.getElementById('edit-brand').value);
-        formData.append('model', document.getElementById('edit-model').value);
-        const rawLinks = document.getElementById('edit-links').value
-          .split('\n')
-          .map(link => link.trim())
-          .filter(link => link.length > 0);
-        formData.append('links', JSON.stringify(rawLinks));
-
-        formData.append('type', document.getElementById('edit-type').value);
-
-        const photoPreview = document.getElementById('edit-photo-preview');
-        const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
-        const existingPhotos = photoThumbs.map(img => decodeURIComponent(new URL(img.src).pathname));
-
-        formData.append('existingPhotos', JSON.stringify(existingPhotos));
-
-        const newPhotos = document.getElementById('edit-photos').files;
-        for (let i = 0; i < newPhotos.length; i++) {
-          formData.append('photos', newPhotos[i]);
-        }
-
-        const docPreview = document.getElementById('edit-documents-preview');
-        const docLinks = Array.from(docPreview.getElementsByTagName('a'));
-        //const existingDocs = docLinks.map(link => link.href);
-        const existingDocs = docLinks.map(link => decodeURIComponent(new URL(link.href).pathname));
-
-        formData.append('existingDocuments', JSON.stringify(existingDocs));
-
-        const newDocs = document.getElementById('edit-documents').files;
-        for (let i = 0; i < newDocs.length; i++) {
-          formData.append('documents', newDocs[i]);
-        }
-
-        await fetch(`/items/${id}`, {
-          method: 'PUT',
-          body: formData
+        document.getElementById('prevImage').addEventListener('click', () => {
+          if (currentImageIndex > 0) {
+            currentImageIndex--;
+            showImage(currentImageIndex);
+          }
         });
 
-        document.getElementById('editModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-        fetchItems();
-        window.location.href = '/index';
-
-      });
-      document.getElementById('edit-photos').addEventListener('change', function () {
-        const previewContainer = document.getElementById('edit-photos-preview');
-        previewContainer.innerHTML = '';
-
-        Array.from(this.files).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.width = '60px';
-            img.style.borderRadius = '4px';
-            img.style.border = '1px solid #ccc';
-            previewContainer.appendChild(img);
-          };
-          reader.readAsDataURL(file);
+        document.getElementById('nextImage').addEventListener('click', () => {
+          if (currentImageIndex < currentImageList.length - 1) {
+            currentImageIndex++;
+            showImage(currentImageIndex);
+          }
         });
-      });
 
-
-
-      // Cancelar edit
-      document.getElementById('cancelEditBtn').addEventListener('click', () => {
-        document.getElementById('editModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-
-      });
-
-
-
-      async function loadUserInfo() {
-        const response = await fetch('/user');
-        const data = await response.json();
-        if (data.username) {
-          document.getElementById('usernameDisplay').innerText = `${data.username}`;
-        }
-      }
-      async function loadUserData() {
-        try {
-          const response = await fetch('/user/profile-data');
-          const data = await response.json();
-          if (data.username) {
-            const profileImageUrl = data.profile_image
-            document.getElementById('profileImg').src = profileImageUrl;
+        document.getElementById('imageModal').addEventListener('click', (e) => {
+          if (e.target.id === 'imageModal') {
+            document.getElementById('imageModal').style.display = 'none';
+            document.body.classList.remove('modal-open');
 
           }
-        } catch (err) {
-          console.error('Failed to load user data:', err);
+        });
+
+
+
+
+        async function addItem(event) {
+          event.preventDefault();
+          const item = {
+            name: document.getElementById('name').value,
+            description: document.getElementById('description').value,
+            acquisition_date: document.getElementById('acquisition_date').value,
+            cost: document.getElementById('cost').value,
+            origin: document.getElementById('origin').value,
+            documents: document.getElementById('documents').value,
+            brand: document.getElementById('brand').value,
+            model: document.getElementById('model').value,
+            photos: document.getElementById('photos').value,
+            type: document.getElementById('type').value
+          };
+
+          await fetch('/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          });
+
+          document.getElementById('addItemForm').reset();
+          switchTab('search');
+          fetchItems();
         }
-      }
 
-      document.getElementById('search').addEventListener('input', fetchItems);
-      document.getElementById('searchField').addEventListener('change', fetchItems);
 
-      // Initialize
-      loadUserInfo();
-      loadUserData();
-      fetchItems();
-    </script>
+
+
+        let itemIdToDelete = null;
+
+        function deleteItem(id) {
+          itemIdToDelete = id;
+          document.getElementById('deleteModal').style.display = 'flex';
+          document.body.classList.add('modal-open');
+
+        }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+          if (itemIdToDelete !== null) {
+            await fetch(`/items/${itemIdToDelete}`, { method: 'DELETE' });
+            fetchItems();
+            itemIdToDelete = null;
+          }
+          document.getElementById('deleteModal').style.display = 'none';
+          document.body.classList.remove('modal-open');
+
+        });
+
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+          itemIdToDelete = null;
+          document.getElementById('deleteModal').style.display = 'none';
+          document.body.classList.remove('modal-open');
+
+        });
+
+        // Open the Edit Modal with item data
+        function createImageThumbnail(url, container) {
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'relative';
+
+          const img = document.createElement('img');
+          img.src = url;
+          img.style.width = '60px';
+          img.style.height = 'auto';
+          img.style.borderRadius = '4px';
+          img.style.border = '1px solid #ccc';
+
+          const removeBtn = document.createElement('span');
+          removeBtn.innerHTML = '&times;';
+          removeBtn.style.position = 'absolute';
+          removeBtn.style.top = '-8px';
+          removeBtn.style.right = '-8px';
+          removeBtn.style.background = '#f00';
+          removeBtn.style.color = '#fff';
+          removeBtn.style.padding = '0 5px';
+          removeBtn.style.cursor = 'pointer';
+          removeBtn.style.borderRadius = '50%';
+          removeBtn.style.fontSize = '14px';
+
+          removeBtn.onclick = () => {
+            container.removeChild(wrapper);
+          };
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(removeBtn);
+          container.appendChild(wrapper);
+        }
+
+        async function editItem(id) {
+          const response = await fetch(`/items/${id}`);
+          const item = await response.json();
+          document.getElementById('edit-id').value = item.id;
+          document.getElementById('edit-name').value = item.name;
+          document.getElementById('edit-description').value = item.description;
+
+          if (item.acquisition_date) {
+            const date = new Date(item.acquisition_date);
+            const formatted = date.getFullYear() + '-' +
+              String(date.getMonth() + 1).padStart(2, '0') + '-' +
+              String(date.getDate()).padStart(2, '0');
+            document.getElementById('edit-acquisition_date').value = formatted;
+          } else {
+            document.getElementById('edit-acquisition_date').value = '';
+          }
+
+          document.getElementById('edit-documents').value = '';
+          document.getElementById('edit-cost').value = item.cost || '';
+          document.getElementById('edit-origin').value = item.origin || '';
+          document.getElementById('edit-brand').value = item.brand || '';
+          document.getElementById('edit-model').value = item.model || '';
+          document.getElementById('edit-photos').value = '';
+          document.getElementById('edit-links').value = item.links
+            ? JSON.parse(item.links).join('\n')
+            : '';
+
+          document.getElementById('edit-type').value = item.type || 'private';
+
+          // Handle photos
+          const photoPreview = document.getElementById('edit-photo-preview');
+          photoPreview.innerHTML = '';
+          if (item.photos) {
+            item.photos.split(',').forEach(url => {
+              if (url.trim()) createImageThumbnail(url.trim(), photoPreview);
+            });
+          }
+
+          // Handle documents
+          const docPreview = document.getElementById('edit-documents-preview');
+          docPreview.innerHTML = '';
+          if (item.documents) {
+            item.documents.split(',').forEach(url => {
+              const trimmed = url.trim();
+              const fileName = trimmed.split('/').pop();
+              const fileNameSimple = trimmed.split('___').pop();
+
+              const wrapper = document.createElement('div');
+              wrapper.style.marginBottom = '5px';
+
+              const link = document.createElement('a');
+              link.href = trimmed;
+              link.textContent = fileNameSimple;
+              link.target = '_blank';
+
+              const removeBtn = document.createElement('span');
+              removeBtn.innerHTML = '&times;';
+              removeBtn.style.marginLeft = '10px';
+              removeBtn.style.cursor = 'pointer';
+              removeBtn.style.color = 'red';
+              removeBtn.onclick = () => {
+                docPreview.removeChild(wrapper);
+              };
+
+              wrapper.appendChild(link);
+              wrapper.appendChild(removeBtn);
+              docPreview.appendChild(wrapper);
+            });
+          }
+
+          document.getElementById('editModal').style.display = 'flex';
+          document.body.classList.add('modal-open');
+        }
+
+
+        // Submit edited data
+        document.getElementById('editItemForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+
+          const id = document.getElementById('edit-id').value;
+          const formData = new FormData();
+          formData.append('name', document.getElementById('edit-name').value);
+          formData.append('description', document.getElementById('edit-description').value);
+          formData.append('acquisition_date', document.getElementById('edit-acquisition_date').value);
+          formData.append('cost', document.getElementById('edit-cost').value);
+          formData.append('origin', document.getElementById('edit-origin').value);
+          formData.append('brand', document.getElementById('edit-brand').value);
+          formData.append('model', document.getElementById('edit-model').value);
+          const rawLinks = document.getElementById('edit-links').value
+            .split('\n')
+            .map(link => link.trim())
+            .filter(link => link.length > 0);
+          formData.append('links', JSON.stringify(rawLinks));
+
+          formData.append('type', document.getElementById('edit-type').value);
+
+          const photoPreview = document.getElementById('edit-photo-preview');
+          const photoThumbs = Array.from(photoPreview.getElementsByTagName('img'));
+          const existingPhotos = photoThumbs.map(img => decodeURIComponent(new URL(img.src).pathname));
+
+          formData.append('existingPhotos', JSON.stringify(existingPhotos));
+
+          const newPhotos = document.getElementById('edit-photos').files;
+          for (let i = 0; i < newPhotos.length; i++) {
+            formData.append('photos', newPhotos[i]);
+          }
+
+          const docPreview = document.getElementById('edit-documents-preview');
+          const docLinks = Array.from(docPreview.getElementsByTagName('a'));
+          //const existingDocs = docLinks.map(link => link.href);
+          const existingDocs = docLinks.map(link => decodeURIComponent(new URL(link.href).pathname));
+
+          formData.append('existingDocuments', JSON.stringify(existingDocs));
+
+          const newDocs = document.getElementById('edit-documents').files;
+          for (let i = 0; i < newDocs.length; i++) {
+            formData.append('documents', newDocs[i]);
+          }
+
+          await fetch(`/items/${id}`, {
+            method: 'PUT',
+            body: formData
+          });
+
+          document.getElementById('editModal').style.display = 'none';
+          document.body.classList.remove('modal-open');
+          fetchItems();
+          window.location.href = '/index';
+
+        });
+        document.getElementById('edit-photos').addEventListener('change', function () {
+          const previewContainer = document.getElementById('edit-photos-preview');
+          previewContainer.innerHTML = '';
+
+          Array.from(this.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.style.width = '60px';
+              img.style.borderRadius = '4px';
+              img.style.border = '1px solid #ccc';
+              previewContainer.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+
+
+
+        // Cancelar edit
+        document.getElementById('cancelEditBtn').addEventListener('click', () => {
+          document.getElementById('editModal').style.display = 'none';
+          document.body.classList.remove('modal-open');
+
+        });
+
+
+
+        async function loadUserInfo() {
+          const response = await fetch('/user');
+          const data = await response.json();
+          if (data.username) {
+            document.getElementById('usernameDisplay').innerText = `${data.username}`;
+          }
+        }
+        async function loadUserData() {
+          try {
+            const response = await fetch('/user/profile-data');
+            const data = await response.json();
+            if (data.username) {
+              const profileImageUrl = data.profile_image
+              document.getElementById('profileImg').src = profileImageUrl;
+
+            }
+          } catch (err) {
+            console.error('Failed to load user data:', err);
+          }
+        }
+
+        document.getElementById('search').addEventListener('input', fetchItems);
+        document.getElementById('searchField').addEventListener('change', fetchItems);
+
+        // Initialize
+        loadUserInfo();
+        loadUserData();
+        fetchItems();
+      </script>
 
 </body>
 

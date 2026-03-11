@@ -66,48 +66,78 @@
       <button class="btn-edit" id="editProfileBtn">Editar Perfil</button>
     </div>
   </div>
+  <div id="customAlertModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+    <div
+      style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+      <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+      <button onclick="closeCustomAlert()"
+        style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+    </div>
+    <script src="public/js/utils.js"></script>
 
-  <script src="public/js/utils.js"></script>
+    <script>
+      let alertResolve = null;
 
-  <script>
-    async function loadUserInfo() {
-      const response = await fetch('/user');
-      const data = await response.json();
-      if (data.username) {
-        document.getElementById('usernameDisplay').innerText = `${data.username}`;
+      function customAlert(message) {
+        return new Promise((resolve) => {
+          alertResolve = resolve;
+          const modal = document.getElementById("customAlertModal");
+          const msgBox = document.getElementById("customAlertMessage");
+          msgBox.textContent = message;
+          modal.style.display = "block";
+        });
       }
-    }
-    async function loadUserData() {
-      try {
-        const response = await fetch('/user/profile-data');
+
+      function closeCustomAlert() {
+        const modal = document.getElementById("customAlertModal");
+        modal.style.display = "none";
+
+        if (typeof alertResolve === 'function') {
+          alertResolve(); // this resumes the "await customAlert()"
+          alertResolve = null;
+        }
+      }
+
+      async function loadUserInfo() {
+        const response = await fetch('/user');
         const data = await response.json();
         if (data.username) {
-          console.log(data)
-          document.getElementById('profileDisplay').innerText = data.username;
-          document.getElementById('profileEmail').innerText = data.email;
-          document.getElementById('itemCountDisplay').innerText = data.itemCount;
-          document.getElementById('itemCostDisplay').innerText = data.totalCost;
-
-          const profileImageUrl = data.profile_image
-          document.getElementById('profilePic').src = profileImageUrl;
-          document.getElementById('profileImg').src = profileImageUrl;
-
+          document.getElementById('usernameDisplay').innerText = `${data.username}`;
         }
-      } catch (err) {
-        console.error('Failed to load user data:', err);
       }
-    }
+      async function loadUserData() {
+        try {
+          const response = await fetch('/user/profile-data');
+          const data = await response.json();
+          if (data.username) {
+            console.log(data)
+            document.getElementById('profileDisplay').innerText = data.username;
+            document.getElementById('profileEmail').innerText = data.email;
+            document.getElementById('itemCountDisplay').innerText = data.itemCount;
+            document.getElementById('itemCostDisplay').innerText = data.totalCost;
+
+            const profileImageUrl = data.profile_image
+            document.getElementById('profilePic').src = profileImageUrl;
+            document.getElementById('profileImg').src = profileImageUrl;
+
+          }
+        } catch (err) {
+          console.error('Failed to load user data:', err);
+        }
+      }
 
 
-    document.getElementById('editProfileBtn').addEventListener('click', () => {
-      window.location.href = '/edit-profile';
-    });
+      document.getElementById('editProfileBtn').addEventListener('click', () => {
+        window.location.href = '/edit-profile';
+      });
 
 
-    //Initialize
-    loadUserInfo();
-    loadUserData();
-  </script>
+      //Initialize
+      loadUserInfo();
+      loadUserData();
+
+    </script>
 </body>
 
 </html>

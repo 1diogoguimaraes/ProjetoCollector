@@ -119,7 +119,10 @@ const storage = multer.diskStorage({
         const seconds = String(now.getSeconds()).padStart(2, '0');
 
         const formattedDate = `${day}-${month}-${year}`;
-        const uniqueName = formattedDate + '___' + decodedOriginalName;
+        const randomNum = Math.floor(Math.random() * 1000) + 1;
+
+        const uniqueName = `${formattedDate}_${randomNum}___${decodedOriginalName}`;
+
         cb(null, uniqueName);
     }
 });
@@ -138,6 +141,7 @@ const profileImageStorage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         const decodedOriginalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+
         const uniqueName = Date.now() + '___' + decodedOriginalName;
         cb(null, uniqueName);
     }
@@ -220,37 +224,37 @@ app.post('/forgot-password', async (req, res) => {
                 const mailOptions = {
                     from: `My Collector <${process.env.EMAIL_USER}>`,
                     to: user.email,
-                    subject: 'Reset Your Password - My Collector',
+                    subject: 'Recuperar Palavra-passe - My Collector',
                     html: `
-                        <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
-                            <p>Dear ${user.username},</p>
-                
-                            <p>We received a request to reset your password for your My Collector account. If you made this request, please click the button below to set a new password:</p>
-                
-                            <p style="text-align: center; margin: 20px 0;">
-                                <a href="${resetLink}" 
-                                   style="background-color: #007BFF; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
-                                   Reset Your Password
-                                </a>
-                            </p>
-                
-                            <p>This password reset link will expire in 1 hour. If you did not request a password reset, please ignore this message. Your account will remain secure.</p>
-                
-                            <p>Thank you,<br/>The My Collector Team</p>
-                
-                            <hr style="margin-top: 30px; border: none; border-top: 1px solid #ccc;" />
-                            <small style="color: #999;">This email was sent automatically. Please do not reply directly to this message.</small>
-                        </div>
-                    `,
-                    text: `Dear ${user.username},\n\nWe received a request to reset your password. Click the link below to reset it:\n\n${resetLink}\n\nThis link will expire in 1 hour.`,
+    <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+      <p>Caro(a) ${user.username},</p>
 
+      <p>Recebemos um pedido para redefinir a palavra-passe da sua conta My Collector. Se foi você quem fez este pedido, clique no botão abaixo para criar uma nova palavra-passe:</p>
+
+      <p style="text-align: center; margin: 20px 0;">
+        <a href="${resetLink}" 
+           style="background-color: #007BFF; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+           Redefinir Palavra-passe
+        </a>
+      </p>
+
+      <p>Este link para redefinição expira dentro de 1 hora. Se não solicitou esta alteração, ignore esta mensagem. A sua conta permanecerá segura.</p>
+
+      <p>Obrigado,<br/>A equipa My Collector</p>
+
+      <hr style="margin-top: 30px; border: none; border-top: 1px solid #ccc;" />
+      <small style="color: #999;">Este e-mail foi enviado automaticamente. Por favor, não responda diretamente a esta mensagem.</small>
+    </div>
+  `,
+                    text: `Caro(a) ${user.username},\n\nRecebemos um pedido para redefinir a sua palavra-passe. Clique no link abaixo para a redefinir:\n\n${resetLink}\n\nEste link expira dentro de 1 hora.`,
                 };
+
 
 
                 try {
                     const transporter = await createTransporter();
                     await transporter.sendMail(mailOptions);
-                    res.send('Password reset link has been sent to your email');
+                    res.send('O reset link foi enviado para o seu email.');
                 } catch (error) {
                     console.error('Error sending email:', error);
                     res.status(500).send('Error sending email');
@@ -303,7 +307,7 @@ app.post('/reset-password/:token', (req, res) => {
                 db.query('DELETE FROM password_resets WHERE token = ?', [token], (err) => {
                     if (err) return res.status(500).send('Error cleaning up reset token');
 
-                    res.send('Password successfully reset');
+                    res.send('Password alterada com sucesso!');
                 });
             });
 

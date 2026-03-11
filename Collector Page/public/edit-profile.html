@@ -56,38 +56,68 @@
     </form>
     <a href="/profile" class="btn-back">Cancelar</a>
   </div>
+  <div id="customAlertModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+    <div
+      style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+      <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+      <button onclick="closeCustomAlert()"
+        style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+    </div>
+    <script src="public/js/utils.js"></script>
 
-  <script src="public/js/utils.js"></script>
-
-  <script>
-    // Load current user data
-    async function loadCurrentProfile() {
-      const res = await fetch('/user/profile-data');
-      const data = await res.json();
-      document.getElementById('email').value = data.email;
-    }
-
-    document.addEventListener('DOMContentLoaded', loadCurrentProfile);
-
-    // Handle form submission
-    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const formData = new FormData(form);
-
-      const response = await fetch('/user/update-profile', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (response.ok) {
-        alert('Perfil updated!');
-        window.location.href = '/profile';
-      } else {
-        alert('Failed to update profile.');
+    <script>
+      // Load current user data
+      async function loadCurrentProfile() {
+        const res = await fetch('/user/profile-data');
+        const data = await res.json();
+        document.getElementById('email').value = data.email;
       }
-    });
-  </script>
+
+      document.addEventListener('DOMContentLoaded', loadCurrentProfile);
+
+      // Handle form submission
+      document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const response = await fetch('/user/update-profile', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          await customAlert('Perfil atualizado');
+          window.location.href = '/profile';
+        } else {
+          await customAlert('Falha ao atualizar perfil.');
+
+        }
+      });
+      let alertResolve = null;
+
+      function customAlert(message) {
+        return new Promise((resolve) => {
+          alertResolve = resolve;
+          const modal = document.getElementById("customAlertModal");
+          const msgBox = document.getElementById("customAlertMessage");
+          msgBox.textContent = message;
+          modal.style.display = "block";
+        });
+      }
+
+      function closeCustomAlert() {
+        const modal = document.getElementById("customAlertModal");
+        modal.style.display = "none";
+
+        if (typeof alertResolve === 'function') {
+          alertResolve(); // this resumes the "await customAlert()"
+          alertResolve = null;
+        }
+      }
+
+    </script>
 </body>
 
 </html>

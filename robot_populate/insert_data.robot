@@ -9,7 +9,7 @@ Library    String
 *** Variables ***
 ${BROWSER}    chrome
 ${LOCALHOST_URL}    http://localhost:3000
-${ITEMS_NUMBER}    10
+${ITEMS_NUMBER}    5
 
 
 ${ADD_ITEM_TAB}    addItemTab
@@ -21,7 +21,7 @@ ${ITEMS_TAB}    searchTab
 @{LINKS}    https://stackoverflow.com/questions    https://www.facebook.com/    https://www.youtube.com/
 
 @{ORIGINS}    Colega    Feira Fundão    Porto    Alemanha    America    Covilhã    Amigo
-@{VALUES}           100    300    1200    54    12341    11221
+@{VALUES}           10,10    30,40    1200,32    5,4    123,41    1122,14
 @{BRANDS}    Casio    Rollwatch    Mermeid    Midas    Macro    Bells    Prot    Dask
 @{MODELS}    3    45    Mend    Sppa    QWERTY    Gir    Ceer    Lands
 
@@ -62,8 +62,8 @@ Open website collector
     Open Browser    ${LOCALHOST_URL}    ${BROWSER}
     Click Element    loginBtn
     Wait Until Element Is Visible    username
-    Input Text    username    ze
-    Input Password    password    Password.123456
+    Input Text    username    Diogo
+    Input Password    password    Password.12
     Click Button    //form/button
 
 Change Tab

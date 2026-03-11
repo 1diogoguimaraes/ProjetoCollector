@@ -47,6 +47,17 @@
 
   </div>
 
+  <!-- Reusable Modal Component -->
+  <div id="customAlertModal"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;">
+    <div
+      style="background:#fff; padding:20px; border-radius:10px; max-width:300px; margin:15% auto; text-align:center; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+      <p id="customAlertMessage" style="margin-bottom:20px;"></p>
+      <button onclick="closeCustomAlert()"
+        style="padding:10px 20px; background:#007BFF; color:#fff; border:none; border-radius:5px; cursor:pointer;">OK</button>
+    </div>
+  </div>
+  <script src="public/js/utils.js"></script>
   <script>
     async function login(event) {
       event.preventDefault();
@@ -62,7 +73,8 @@
       if (response.ok) {
         window.location.href = '/';
       } else {
-        alert('Login failed');
+        await customAlert('Falha no login!');
+
       }
     }
 
@@ -76,6 +88,28 @@
     });
 
     document.getElementById('loginForm').addEventListener('submit', login);
+
+    let alertResolve = null;
+
+    function customAlert(message) {
+      return new Promise((resolve) => {
+        alertResolve = resolve;
+        const modal = document.getElementById("customAlertModal");
+        const msgBox = document.getElementById("customAlertMessage");
+        msgBox.textContent = message;
+        modal.style.display = "block";
+      });
+    }
+
+    function closeCustomAlert() {
+      const modal = document.getElementById("customAlertModal");
+      modal.style.display = "none";
+
+      if (typeof alertResolve === 'function') {
+        alertResolve(); // this resumes the "await customAlert()"
+        alertResolve = null;
+      }
+    }
 
   </script>
 

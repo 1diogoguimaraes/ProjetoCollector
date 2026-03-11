@@ -2,9 +2,9 @@
 html {
   scrollbar-gutter: stable;
 
-    scroll-behavior: smooth;
+  scroll-behavior: smooth;
 
-  
+
 }
 
 body {
@@ -35,6 +35,7 @@ body::before {
   /* lower = more faded, try 0.2 to 0.5 */
   z-index: -1;
 }
+
 body.modal-open {
   overflow: hidden;
 }
@@ -161,7 +162,8 @@ header {
 
 .user-container input {
   width: 100%;
-  padding-right: 40px; /* space for the icon */
+  padding-right: 40px;
+  /* space for the icon */
 }
 
 .password-container {
@@ -172,7 +174,8 @@ header {
 
 .password-container input {
   width: 100%;
-  padding-right: 40px; /* space for the icon */
+  padding-right: 40px;
+  /* space for the icon */
 }
 
 .toggle-password {
@@ -250,10 +253,12 @@ form select {
   border-radius: 6px;
   font-size: 14px;
 }
+
 #searchForm {
   display: none;
 }
-.search-input  {
+
+.search-input {
   width: 20%;
   padding: 10px;
   margin: 6px 0;
@@ -288,6 +293,7 @@ button:hover {
   background-color: #af7200bc;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
+
 select {
   padding: 10px;
   margin: 6px 0;
@@ -464,8 +470,9 @@ td button:nth-child(1):hover {
   align-items: center;
   gap: 20px;
 }
+
 #menuToggleBtn {
-display: none;
+  display: none;
 }
 
 .nav-menu a {
@@ -516,7 +523,7 @@ display: none;
 }
 
 .modal-content {
-margin-top: 80px;
+  margin-top: 80px;
   background-color: white;
   padding: 2rem;
   border-radius: 12px;
@@ -525,11 +532,27 @@ margin-top: 80px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 
 }
-.modal-content > div {
+
+.modal-content>div {
   box-sizing: border-box;
   width: 100%;
 }
 
+.modal-content-item {
+  margin-top: 80px;
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 800px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+
+}
+
+.modal-content-item>div {
+  box-sizing: border-box;
+  width: 100%;
+}
 
 .modal-scroll {
   max-height: 65vh;
@@ -561,7 +584,8 @@ margin-top: 80px;
   background-color: #e2e8f0;
   color: #2d3748;
 }
-.btn-cancel:hover{
+
+.btn-cancel:hover {
   color: white;
 }
 
@@ -623,14 +647,16 @@ margin-top: 80px;
 }
 
 .thumbnail {
-  width: 50px !important;         /* Smaller width */
-  height: 50px !important;        /* Smaller height */
+  width: 50px !important;
+  /* Smaller width */
+  height: 50px !important;
+  /* Smaller height */
   object-fit: cover;
   cursor: pointer;
   border: 1px solid transparent;
   border-radius: 6px !important;
   transition: border 0.2s ease;
-  
+
 }
 
 
@@ -846,14 +872,17 @@ margin-top: 80px;
 
 /* ===== Mobile-Responsive Enhancements ===== */
 @media (max-width: 768px) {
+
   /* HEADER */
-  .logo-img{
+  .logo-img {
     height: 32px;
   }
-  .profile-img{
+
+  .profile-img {
     width: 32px;
     height: 32px;
   }
+
   /* Layout */
   .container {
     padding: 15px;
@@ -861,13 +890,14 @@ margin-top: 80px;
   }
 
   .item-card {
-  
+
     min-width: 220px;
     width: 40%;
   }
-  .no-image{
+
+  .no-image {
     max-height: 200px;
-  
+
   }
 
   .home-hero {
@@ -900,12 +930,14 @@ margin-top: 80px;
     gap: 10px;
     width: 100%;
   }
+
   .nav-menu.show {
     margin-top: 10px;
     display: flex;
   }
+
   #menuToggleBtn {
-display: block;
+    display: block;
   }
 
   .user-profile {
@@ -924,11 +956,11 @@ display: block;
   form textarea,
   form select,
   .search-input {
-  /*   width: 100% !important; */
+    /*   width: 100% !important; */
   }
 
   button {
-  /*   width: 100%; */
+    /*   width: 100%; */
   }
 
   /* Images & Thumbnails */
@@ -971,13 +1003,15 @@ display: block;
 }
 
 @media (max-width: 600px) {
+
   .main-image-wrapper,
   .main-image-wrapper img {
     max-height: 150px;
   }
-  .no-image{
+
+  .no-image {
     max-height: 150px;
-  
+
   }
 
   .thumbnail {
