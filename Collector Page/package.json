@@ -13,7 +13,7 @@
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
     "axios": "^1.9.0",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "crypto": "^1.0.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
@@ -25,7 +25,7 @@
     "jpeg-js": "^0.4.4",
     "multer": "^2.1.1",
     "mysql": "^2.18.1",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^8.0.2",
     "qrcode": "^1.5.4",
     "sharp": "^0.34.1"
   }
